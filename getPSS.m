@@ -1,5 +1,7 @@
 function x = getPSS(N_g, N, N_sym)
-% qpss->time domain PSS
+% this function computes time domain PSS sequence
+% q_pss bits -> time domain PSS
+
 q_pss = 'C1B5 D191 024D 3DC3 F8EC 52FA A16F 3958';
 hex_nums = strsplit(q_pss);
 bin_nums = '';

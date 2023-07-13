@@ -23,7 +23,7 @@ F_g = F_delta - F_s;    % width of guard band between channels
 
 % other params
 F_c = F_ci(7);
-N_f = 10;               % # of generated frames
+N_f = 20;               % # of generated frames
 N_sym = T_sym*F_s;      % # of samples per symbol including guard interval
 
 %% baseband transmit signal
@@ -66,7 +66,7 @@ for idx = 1:302
         continue;
     else
         tmp = zeros(T_sym*F_s, 1);
-        tmp(N_g+1:end) = N*ifft(X(idx, :)', N);
+        tmp(N_g+1:end) = sqrt(N)*ifft(X(idx, :).');
         tmp(1:N_g) = tmp(end-N_g+1:end);
         x_slice((idx-1)*N_sym+1:idx*N_sym) = tmp;
     end
@@ -83,8 +83,8 @@ plot(t, real(x));
 %% channel
 
 SNR = 10;
-x = x / 40;     % attenuation
-y = awgn(x, SNR);
+y = x / 5;     % attenuation
+y = awgn(y, SNR);
 
 %% RX
 % TODO
@@ -94,6 +94,6 @@ y = awgn(x, SNR);
 % this will generate a figure similar to fig 3.
 frame = 1;
 y_slice = y((frame-1)*(N_sf+1)*N_sym+1:frame*(N_sf+1)*N_sym);
-corr = xcorr(y_slice, y_slice) / length(y_slice);
+corr = xcorr(y_slice) / length(y_slice);
 figure(2);
 plot(mag2dB(abs(corr)), LineWidth=1);

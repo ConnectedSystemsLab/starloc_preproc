@@ -1,7 +1,8 @@
 function X = getSSS(N)
-% qsss->frequency domain SSS
+% this function computes frequency domain SSS sequence
+% q_sss bits ->frequency domain SSS
+
 X = zeros(N, 1);
-% text = fileread("sss.txt");
 q_sss = ...
      ['BD 565D 5064 E9B3 A949 58F2 8624 DED5 6094 6199 F5B4 0F0E 4FB5' ...
     'EFCB 473B 4C24 B2D1 E0BD 01A6 A04D 5017 DE91 A8EC C0DA 09EB FE57' ...
