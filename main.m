@@ -23,7 +23,7 @@ F_g = F_delta - F_s;    % width of guard band between channels
 
 % other params
 F_c = F_ci(7);
-N_f = 10;               % # of generated frames
+N_f = 20;               % # of generated frames
 N_sym = T_sym*F_s;      % # of samples per symbol including guard interval
 
 %% baseband transmit signal
@@ -58,18 +58,17 @@ for frame = 1:N_f
     % gutter
     X(:, [1 2 N-1 N]) = 0;
 
-    % time domain
-    x_slice = zeros((N_sf+1)*N_sym, 1);
-    for idx = 1:302
-        if idx == 1
-            x_slice(1:N_sym) = getPSS(N_g, N, N_sym);
-            continue;
-        else
-            tmp = zeros(T_sym*F_s, 1);
-            tmp(N_g+1:end) = N*ifft(X(idx, :)', N);
-            tmp(1:N_g) = tmp(end-N_g+1:end);
-            x_slice((idx-1)*N_sym+1:idx*N_sym) = tmp;
-        end
+% time domain
+x_slice = zeros((N_sf+1)*N_sym, 1);
+for idx = 1:302
+    if idx == 1
+        x_slice(1:N_sym) = getPSS(N_g, N, N_sym);
+        continue;
+    else
+        tmp = zeros(T_sym*F_s, 1);
+        tmp(N_g+1:end) = sqrt(N)*ifft(X(idx, :).');
+        tmp(1:N_g) = tmp(end-N_g+1:end);
+        x_slice((idx-1)*N_sym+1:idx*N_sym) = tmp;
     end
     x((frame-1)*(N_sf+1)*N_sym+1:frame*(N_sf+1)*N_sym) = x_slice;
 end
@@ -85,8 +84,9 @@ x_transmit = [zeros(100000,1); x_real ; zeros(100000,1)];
 %% channel
 % TODO 
 SNR = 10;
-y = x_transmit / 40;     % attenuation
-y = awgn(x_transmit, SNR);
+y = x_transmit / 5;     % attenuation
+y = awgn(y, SNR);
+
 %% RX
 % TODO
 
