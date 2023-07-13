@@ -1,5 +1,6 @@
 clear all; clc;
 
+
 %% parameters
 
 % independent params
@@ -70,6 +71,7 @@ for idx = 1:302
         tmp(1:N_g) = tmp(end-N_g+1:end);
         x_slice((idx-1)*N_sym+1:idx*N_sym) = tmp;
     end
+end
     x((frame-1)*(N_sf+1)*N_sym+1:frame*(N_sf+1)*N_sym) = x_slice;
 end
 t = [1:(N_sf+1)*N_sym*N_f]'/F_s;
@@ -90,8 +92,9 @@ y = awgn(y, SNR);
 %% RX
 % TODO
 
+% current receiver samples 20MHz of bandwidth => 240e6/20e6 = 12
+% y_receive = downsample(y, 4); 
 %% test
-
 % this will generate a figure similar to fig 3.
 frame = 1;
 y_slice = y((frame-1)*(N_sf+1)*N_sym+1:frame*(N_sf+1)*N_sym);
@@ -99,3 +102,8 @@ y_slice = y((frame-1)*(N_sf+1)*N_sym+1:frame*(N_sf+1)*N_sym);
 corr = xcorr(y_slice, y_slice) / length(y_slice);
 figure(2);
 plot(mag2dB(abs(corr)), LineWidth=1);
+
+corr_frames = xcorr(y, y) / length(y);
+figure(3);
+plot(mag2dB(abs(corr_frames)), LineWidth=1);
+
