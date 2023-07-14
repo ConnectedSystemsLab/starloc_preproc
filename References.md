@@ -55,3 +55,23 @@ Links that might be useful.
   - [Calculate Latency and Doppler in a Satellite Scenario - MATLAB & Simulink - MathWorks](https://ww2.mathworks.cn/help/satcom/ug/calculate-latency-and-doppler-in-a-satellite-scenario.html)
 - TLE file website
   - newest TLE can be found on [CelesTrak: Current Supplemental GP Element Sets](http://celestrak.org/NORAD/elements/supplemental/).
+
+### A discussion
+
+- doppler effect
+
+  Auto-correlation should be robust to doppler effect, i.e., the peaks should still exist even though there is doppler frequency shift. The doppler frequency shift will be $f_d\sim 10\ kHz$, while the frame period $T_f=\frac{1}{750} \ s$, so the phase change of each sample compared with a frame ago will be $\Delta \theta = 2\pi f T_f$, which means it will be multiplied by $e^{j\Delta \theta}$. However, this will not influence `abs(xcorr(y))`.
+
+  Doppler might be measured by the nine tones.
+
+- correlation
+
+  Another way of correlation is to correlate the received signal with local sequence, e.g., if we want to locate the beginning of each frame, we can correlate the received signal with PSS sequence in time domain. On the one hand, this will generate stronger peaks compared with auto-correlation while on the other hand, this method is sensitive to doppler, since the local sequence does not have doppler. 
+
+- matlab simulation
+
+  Simulation can be done in baseband.
+
+- some methods
+
+  Since satellites are moving fast, he suggests generate some test signals by our own to verify the signal capture process.
