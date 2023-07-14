@@ -23,7 +23,8 @@ F_delta = F_ci(2)-F_ci(1);
 F_g = F_delta - F_s;    % width of guard band between channels
 
 % other params
-F_c = F_ci(7);
+% Operating in baseband for simulations. Setting F_c = 0.
+F_c = 0; %F_ci(7);
 N_f = 20;               % # of generated frames
 N_sym = T_sym*F_s;      % # of samples per symbol including guard interval
 
@@ -75,14 +76,15 @@ end
     x((frame-1)*(N_sf+1)*N_sym+1:frame*(N_sf+1)*N_sym) = x_slice;
 end
 t = [1:(N_sf+1)*N_sym*N_f]'/F_s;
-x_real = abs(x).*cos(2*pi*F_c*t+angle(x));
+x_real = abs(x);
 figure(1);
 plot(t, x_real)
 %% TX
 % TODO
 
-% frames appended by zeros
-x_transmit = [zeros(100000,1); x_real ; zeros(100000,1)];
+% frames appended by zeros and using carrier/center frequency (F_c) as 0 for
+% simulations
+x_transmit = [zeros(100000,1); x_real.*cos(2*pi*F_c*t+angle(x)) ; zeros(100000,1)];
 %% channel
 % TODO 
 SNR = 10;
@@ -92,8 +94,8 @@ y = awgn(y, SNR);
 %% RX
 % TODO
 
-% current receiver samples 20MHz of bandwidth => 240e6/20e6 = 12
-% y_receive = downsample(y, 4); 
+% Receiver in the paper samples 62.5MHz of bandwidth => 240e6/62.5e6 ~ 4
+y_receive = downsample(y, 4); 
 %% test
 % this will generate a figure similar to fig 3.
 frame = 1;
@@ -103,7 +105,7 @@ corr = xcorr(y_slice, y_slice) / length(y_slice);
 figure(2);
 plot(mag2dB(abs(corr)), LineWidth=1);
 
-corr_frames = xcorr(y, y) / length(y);
+corr_frames = xcorr(y_receive, y_receive) / length(y_receive);
 figure(3);
 plot(mag2dB(abs(corr_frames)), LineWidth=1);
 
