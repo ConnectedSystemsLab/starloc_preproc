@@ -15,11 +15,27 @@ title('time-domain transmit signal');
 % simulations
 % x_transmit = [zeros(100000, 1); x_real.*cos(2*pi*F_c*t+angle(x)); zeros(100000, 1)];
 
+%% doppler simulation
+[f_d, elev, t_sat] = getDoppler('STARLINK-6089.tle', F_c, t(end));
+
+figure(2);
+plot(t_sat, f_d/1e3);
+title("Satellite Velocity Along the Line Between Sat and GS");
+xlabel("Simulation Time (s)");
+ylabel("Doppler Frequency Shift (kHz)");
+grid on;
+
+figure(3);
+plot(t_sat, -elev);
+title("Elevation of satellite during simulation");
+xlabel("Simulation Time (s)");
+ylabel("Elevation (degree)");
+grid on;
+
 %% channel
 SNR = 10;
 % y = x_transmit / 5;     % attenuation
 y = x / 4;              % attenuation
-f_d = getDoppler('STARLINK-6089.tle', F_c, t(end));
 f_d = f_d(ceil(t/t(end)*length(f_d)));
 y = y.*exp(j*2*pi*f_d.*t);
 y = awgn(y, SNR);
@@ -33,11 +49,11 @@ y_receive = downsample(y, 4);
 frame = 1;
 y_slice = y((frame-1)*(N_sf+1)*N_sym+1:frame*(N_sf+1)*N_sym);
 corr = xcorr(y_slice) / length(y_slice);
-% figure(2);
+% figure(4);
 % plot(mag2dB(abs(corr)), LineWidth=1);
 % title('correlation: 1 frame');
 corr_frames = xcorr(y_receive) / length(y_receive);
-figure(3);
+figure(5);
 plot(mag2dB(abs(corr_frames)), LineWidth=1);
 title('correlation: all frames');
 xlim([length(corr_frames)/2 - N*2 length(corr_frames)/2 + N*2])

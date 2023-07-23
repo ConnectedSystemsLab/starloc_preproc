@@ -1,4 +1,4 @@
-function [f_doppler] = getDoppler(tle_file_path, fc, duration)
+function [f_doppler, el, t_doppler] = getDoppler(tle_file_path, fc, duration)
 % calculate the doppler frequency shift from tle file
 % Matlab satellite communication toolbox needed
 % use Starlink 6089 as an example
@@ -8,7 +8,8 @@ startTime = datetime(2023, 7, 22, 11, 55, 0);
 startTime = startTime + hours(5);       % UTC time
 startTime = startTime + days(1.8) + minutes(23);
 stopTime = startTime + seconds(duration);
-sampleTime = 1e-3;  % s
+% sampleTime = 1e-3;  % s
+sampleTime = duration / 1000;  % s
 sc = satelliteScenario(startTime, stopTime, sampleTime);
 
 % satellite setting
@@ -79,12 +80,6 @@ end
 % doppler
 t_doppler = linspace(0, duration, numSamples+1)';
 f_doppler = dopV*fc/c;
-figure;
-plot(t_doppler, f_doppler/1e3)
-title("Satellite Velocity Along the Line Between Sat and GS")
-xlabel("Simulation Time (s)")
-ylabel("Doppler Frequency Shift (kHz)")
-grid on
 
 end
 
