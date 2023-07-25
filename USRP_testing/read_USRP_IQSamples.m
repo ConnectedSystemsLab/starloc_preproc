@@ -1,28 +1,33 @@
 clear all;
 addpath ../functions/
 
-IQ_Sample_file = '/Users/ishani/UIUC/Research/LeoSat/Positioning/USRP_Data/IQ_Samples_03_07_23_17_29_2MHz_11950.dat'
+IQ_Sample_file = '/home/ishani/LeoPNT/USRP_data/capture_2023_07_24_bw-100_center-1_825_time-15_27.dat'
 
-save_to_folder = '/Users/ishani/UIUC/Research/LeoSat/Positioning/codebase/USRP_testing/spectrograms';
-sub_folder_name = split(IQ_Sample_file, '/');
-sub_folder_name = split(sub_folder_name(end), '.');
-sub_folder_name = sub_folder_name{1};
+% save_to_folder = '/Users/ishani/UIUC/Research/LeoSat/Positioning/codebase/USRP_testing/spectrograms';
+% sub_folder_name = split(IQ_Sample_file, '/');
+% sub_folder_name = split(sub_folder_name(end), '.');
+% sub_folder_name = sub_folder_name{1};
+% 
+% dirs = {save_to_folder, sub_folder_name}
+% for k = 1 :length (dirs)
+%   Thisdir = fullfile(dirs{1:k})
+%   mkdir(Thisdir)
+% end
 
-dirs = {save_to_folder, sub_folder_name}
-for k = 1 :length (dirs)
-  Thisdir = fullfile(dirs{1:k})
-  mkdir(Thisdir)
-end
-
-sample_rate = 2e6;
-center_freq = 1.575e9;
+sample_rate = 100e6;
+center_freq = 1.825e9;
 bw = sample_rate;
 num_samples = 8192;
 idx = 0;
 spectrogram_num = 0
 signal = [];
+f = fopen(IQ_Sample_file, 'rb');
+
 while(1)
-    [a, is_end] = read_complex_binary2(IQ_Sample_file, num_samples, idx*num_samples);
+    % values = fread(f, [num_samples*2 1], 'float');
+    % a = values(1:2:end) + values(2:2:end)*i;
+    % signal = [signal; a];
+    [a, is_end] = read_complex_binary_gnu_file(IQ_Sample_file, num_samples, idx*num_samples);
 %     a = bandpass(a,[1 0.4e6],sample_rate);
     signal = [signal; a];
     if (is_end == 1)
@@ -35,8 +40,8 @@ while(1)
         spectrogram(signal, num_samples, 0, num_samples, sample_rate, 'centered');
         caxis([-180 -20])
         %save spectrogram figure & close it
-        savefig(spec, join([save_to_folder, '/', sub_folder_name, '/', num2str(spectrogram_num), '.fig'], ''));
-%         pause(0.5)
+        % savefig(spec, join([save_to_folder, '/', sub_folder_name, '/', num2str(spectrogram_num), '.fig'], ''));
+        pause(0.5)
 % 
 %         waitforbuttonpress();
         close(spec);
