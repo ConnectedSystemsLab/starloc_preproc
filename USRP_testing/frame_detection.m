@@ -1,10 +1,12 @@
+% IQ_Sample_file = ['/home/ishani/LeoPNT/USRP_data/' ...
+%     'capture_2023_07_24_bw-100_center-1_325_time-15_38.dat'];
 IQ_Sample_file = ['/home/ishani/LeoPNT/USRP_data/' ...
-    'capture_2023_07_24_bw-100_center-1_325_time-15_38.dat'];
-num_samples = 1e6;      % # of samples read for one time
+    'IQ_Samples_06_22_23_16_15_20MHz_11950-youtubelive.dat'];
+num_samples = 1e6/8;      % # of samples read for one time
 f = fopen(IQ_Sample_file, 'rb');
 sample_rate = 100e6;
-packet_len = 2e4;
-num_detect_frame = 5e2;
+packet_len = 2e4/5;
+num_detect_frame = 5e2*10;
 frame_count = 0;
 fail_count = 0;
 threshold_1 = 1.5;
