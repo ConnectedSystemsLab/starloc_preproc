@@ -50,9 +50,9 @@ function [v, is_end] = read_complex_binary2(filename, count, start)
         display(['fseek status', num2str(s)]);
         is_end = 1;
     end
-    t = fread (f, [2, count], 'float');
+    bits_read = fread (f, [2, count], 'float');
     fclose (f);
-    v = t(1,:) + t(2,:)*1i;
+    v = bits_read(1,:) + bits_read(2,:)*1i;
     [r, c] = size (v);
     v = reshape (v, c, r);
   end

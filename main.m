@@ -5,9 +5,8 @@ setParam;
 
 %% baseband transmit signal
 [x, t] = getBasebandSig();
-x_real = abs(x);
 figure(1);
-plot(t, x_real);
+plot(t, abs(x));
 title('time-domain transmit signal');
 
 %% TX
@@ -16,7 +15,7 @@ title('time-domain transmit signal');
 % x_transmit = [zeros(100000, 1); x_real.*cos(2*pi*F_c*t+angle(x)); zeros(100000, 1)];
 
 %% doppler simulation
-[f_d, elev, t_sat] = getDoppler('STARLINK-6089.tle', F_c, t(end));
+[f_d, elev, t_sat] = getDoppler('STARLINK-6089.tle', F_c, 100*t(end));
 
 figure(2);
 plot(t_sat, f_d/1e3);
@@ -33,7 +32,7 @@ ylabel("Elevation (degree)");
 grid on;
 
 %% channel
-SNR = 10;
+SNR = 12;
 % y = x_transmit / 5;     % attenuation
 y = x / 4;              % attenuation
 f_d = f_d(ceil(t/t(end)*length(f_d)));
