@@ -2,6 +2,6 @@
 *.DS_Store
 ./USRP_testing/ofdm_analysis
 ./USRP_testing/spectrograms
-Satellite_Sim/matlab_code/tles
 *.csv
 *.php
+Satellite_Sim/matlab_code/Starlink.tle
