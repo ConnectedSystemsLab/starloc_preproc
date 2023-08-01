@@ -36,7 +36,7 @@ SNR = 12;
 % y = x_transmit / 5;     % attenuation
 y = x / 4;              % attenuation
 f_d = f_d(ceil(t/t(end)*length(f_d)));
-y = y.*exp(j*2*pi*f_d.*t);
+% y = y.*exp(j*2*pi*f_d.*t);
 y = awgn(y, SNR);
 
 %% RX
@@ -46,11 +46,11 @@ y_receive = downsample(y, 4);
 %% test
 % this will generate a figure similar to fig 3.
 frame = 1;
-y_slice = y((frame-1)*(N_sf+1)*N_sym+1:frame*(N_sf+1)*N_sym);
+y_slice = y_receive((frame-1)*(N_sf+1)*N_sym+1:frame*(N_sf+1)*N_sym);
 corr = xcorr(y_slice) / length(y_slice);
-% figure(4);
-% plot(mag2dB(abs(corr)), LineWidth=1);
-% title('correlation: 1 frame');
+figure(4);
+plot(mag2dB(abs(corr)), LineWidth=1);
+title('correlation: 1 frame');
 corr_frames = xcorr(y_receive) / length(y_receive);
 figure(5);
 plot(mag2dB(abs(corr_frames)), LineWidth=1);
