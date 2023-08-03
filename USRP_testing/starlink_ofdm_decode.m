@@ -1,5 +1,5 @@
 %% read trace file
-addpath ../;
+addpath ../Tool_Functions/;
 
 sample_rate = 100e6;
 channel_center = 11.325e9;
