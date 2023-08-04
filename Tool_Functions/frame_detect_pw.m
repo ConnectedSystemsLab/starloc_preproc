@@ -3,49 +3,62 @@ function [idxs, num_f] = frame_detect_pw(file_path, sample_rate, num_samples)
 tic;
 fprintf("Decting frames in %s\n", file_path);
 addpath ../Tool_Functions/
+
+bw = sample_rate;
 T_f = 1.33e-3;
 N_f = T_f*sample_rate;
+d_samp = 10;
+% agg_frames = 10;
+% t = 1e-2;
+% n_fft = num_samples / 100;
+% num_samples = agg_frames*n_fft;
 
-idxs_tmp = [];
+idxs = [];
 f = fopen(file_path, 'rb');
-window_size = 2e3;
+window_size = 5e3/d_samp;
 filter_kernal = ones(window_size, 1)/window_size;
 z = zeros(window_size-1, 1);
 
 is_end = false;
 read_idx = 0;           % # of read times
-detect_count = 0;       % # of detected frame
-pw_threshold = -15.5;     % 10*log10(*), dB
+% detect_count = 0;       % # of detected frame
+pw_threshold = -15;     % 10*log10(*), dB
 while ~is_end
     read_idx = read_idx+1;
     
     [signal, is_end] = fread_complex(f, num_samples);
+    signal = signal(1:d_samp:end);
     sig_pw = abs(signal).^2;
     
     [pw_avg, z] = filter(filter_kernal, 1, sig_pw, z);
     idx_above_thresh = pw_avg > 10^(pw_threshold/10);
-    idx_above_thresh = diff(idx_above_thresh);
-    if ~isempty(find(idx_above_thresh))
-        idx_new = find(idx_above_thresh)+(read_idx-1)*num_samples;
-        % % merge adjacent points
-        % idx_new_merge = idx_new(diff(idx_new)>1e3);
-        % if ~isempty(idx_new_merge)
-        %     idx_new_merge = [idx_new_merge ; idx_new(end)];
-        % else
-        %     continue;
+    idx_above_thresh = find(idx_above_thresh);
+    % idx_above_thresh = diff(idx_above_thresh);
+    % 
+    % ones_idx = find(idx_above_thresh, 1);
+    if ~isempty(idx_above_thresh)
+        idxs = [idxs; (read_idx-1)*num_samples+1];
+        subplot(3, 1, 1);
+        plot(mag2db(abs(signal)));
+        % xline(mod(ones_idx, num_samples));
+        subplot(3, 1, 2);
+        plot(mag2dB(pw_avg));
+        pause(.1);
+        % if ~isempty(ones_idx)
+        %     idxs = [idxs; ones_idx+(read_idx-1)*num_samples];
+        %     subplot(3, 1, 1);
+        %     plot(mag2db(abs(signal)));
+        %     % xline(mod(ones_idx, num_samples));
+        %     subplot(3, 1, 2);
+        %     plot(mag2dB(pw_avg));
+        %     subplot(3, 1, 3);
+        %     freq = linspace(-bw/2, bw/2, n_fft);
+        %     signal_reshape = reshape(signal, [n_fft agg_frames]);
+        %     signal_reshape_fft = fftshift(fft(signal_reshape))/n_fft;
+        %     plot(freq, mag2db(abs(mean(signal_reshape_fft, 2))));
+        %     xlim([-1e6 1e6]);
+        %     pause(.1);
         % end
-        % idxs_tmp = [idxs_tmp; idx_new_merge];
-        num_frames = diff(idx_new)/N_f;
-        is_integer = abs(num_frames-round(num_frames))<=4e-2 & num_frames > 0.8;
-        is_integer = [is_integer;0];
-        is_int_shift = circshift(is_integer, 1);
-        idx_new = idx_new(is_integer | is_int_shift);
-        if ~isempty(idx_new)
-            idxs_tmp = [idxs_tmp; idx_new];
-            plot(mag2db(abs(signal)));
-            xline(mod(idx_new, num_samples));
-            pause(.1);
-        end
     end
 end
 
@@ -57,8 +70,8 @@ end
 % is_int_shift = circshift(is_integer, 1);
 % is_int_shift(1) = 0;
 % idxs = idxs_tmp(is_integer | is_int_shift);
-idxs = idxs_tmp;
+% idxs = idxs_tmp;
 
-num_f = length(idxs)/2;
+num_f = length(idxs);
 fprintf("%d frames found, %d s used\n", num_f, round(toc));
 end

@@ -77,15 +77,19 @@ plot(mag2db(abs(xcorr(pss_, signal))));
 
 %% 3
 
-[res, n] = frame_detect_pw(IQ_Sample_file, 100e6, 1e6);
+[res, n] = frame_detect_pw(IQ_Sample_file, 100e6, 10e6);
 for idx = 1:n
-    s = res((idx-1)*2+1);
-    e = res(idx*2);
-    frame = read_complex_binary2(IQ_Sample_file, e-s+2e5, s-1e5);
+    s = res(idx);
+    frame = read_complex_binary2(IQ_Sample_file, 10e6, s);
     subplot(2, 1, 1);
     plot(mag2db(abs(frame)));
-    xline([1e5 e-s+1e5]);
+    % xline([1e5 e-s+1e5]);
     subplot(2, 1, 2);
-    plot(mag2db(abs(fftshift(fft(frame)))));
+    [frame_fft, freq] = fft_avg(frame, 100e6, 10e6);
+    plot(freq, mag2dB(abs(frame_fft)));
+    xlim([-1e6 1e6]);
     pause(.5);
 end
+
+%% waterfall
+n_fft = 1e6;
