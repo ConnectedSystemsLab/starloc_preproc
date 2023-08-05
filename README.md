@@ -7,6 +7,6 @@
 - `Tool_Functions/`
   useful auxiliary functions
 - `USRP_testing/`
-  testing scripts for data captured by usrp
+  scripts for capturing data and testing scripts for data captured by usrp
 - `OFDM_LAB/`
   learning material
