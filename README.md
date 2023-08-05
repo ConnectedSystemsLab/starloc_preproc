@@ -10,3 +10,5 @@
   scripts for capturing data and testing scripts for data captured by usrp
 - `OFDM_LAB/`
   learning material
+- `bash_scripts`
+  shell scripts for running automated experiments (currently contains script to automate data capture on usrp for several hours)
