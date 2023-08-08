@@ -1,13 +1,11 @@
-clear all; clc;
+clear all; clc; close all;
 
 %% parameters
+addpath Tool_Functions/
 setParam;
 
 %% baseband transmit signal
 [x, t] = getBasebandSig();
-figure(1);
-plot(t, abs(x));
-title('time-domain transmit signal');
 
 %% TX
 % frames appended by zeros and using carrier/center frequency (F_c) as 0 for
@@ -35,15 +33,36 @@ grid on;
 SNR = 12;
 % y = x_transmit / 5;     % attenuation
 y = x / 4;              % attenuation
-f_d = f_d(ceil(t/t(end)*length(f_d)));
+% f_d = f_d(ceil(t/t(end)*length(f_d)));
 % y = y.*exp(j*2*pi*f_d.*t);
 y = awgn(y, SNR);
+y = y / 10;
+figure(1);
+plot(t, mag2db(abs(y)));
+title('time-domain received signal');
 
 %% RX
 % Receiver in the paper samples 62.5MHz of bandwidth => 240e6/62.5e6 ~ 4
-y_receive = downsample(y, 4); 
+% Our USRP samples 100MHz of bandwidth => 240e6/100e6 = 24:10
+y_receive = resample(y, 10, 24);
 
-%% test
+%% pss + doppler test
+pss = get_pss();
+pss_dsamp = resample(pss, 10, 24);
+corr_pss = xcorr(y_receive, pss_dsamp);
+figure;
+plot(mag2db(abs(corr_pss)));
+xlim([length(y_receive), 2*length(y_receive)-1]);
+
+t_dsamp = linspace(0, t(end), length(y_receive))';
+f_d = 200e3;        % doppler shift in [-200, 200] kHz
+y_dopp = y_receive.*exp(-1j*2*pi*f_d*t_dsamp);
+corr_pss_dopp = xcorr(y_dopp, pss_dsamp);
+figure;
+plot(mag2db(abs(corr_pss_dopp)));
+xlim([length(y_receive), 2*length(y_receive)-1]);
+
+%% correlation test
 % this will generate a figure similar to fig 3.
 frame = 1;
 y_slice = y_receive((frame-1)*(N_sf+1)*N_sym+1:frame*(N_sf+1)*N_sym);
