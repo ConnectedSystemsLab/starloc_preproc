@@ -6,3 +6,4 @@
 *.php
 *.mat
 Satellite_Sim/matlab_code/Starlink.tle
+/bash_scripts/newf_iles
