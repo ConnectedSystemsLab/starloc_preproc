@@ -1,4 +1,4 @@
-function x = get_pss()
+function [x, p_] = get_pss()
 % this function computes time domain PSS sequence
 % q_pss bits -> time domain PSS
 
@@ -15,6 +15,7 @@ for idx = 1:length(hex_nums)
 end
 
 x = zeros(N_sym, 1);
+p_ = zeros(N_sym, 1);
 for idx = 1:N_g+N
     k = idx-N_g-1; 
     theta = -1/4;
@@ -32,6 +33,7 @@ for idx = 1:N_g+N
 
 %     x(N_g+1:end) = x(N_g+1:end)+p*sinc(-k-N_g+[1:N]');
     x(N_g+1:end) = x(N_g+1:end)+p*((-k-N_g+[1:N]')==0);
+    p_(idx) = p;
 end
 x(1:N_g) = x(end-N_g+1:end);
 

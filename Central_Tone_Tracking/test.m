@@ -59,7 +59,7 @@ idx_1 = idx_2 - L + 1;
 for idx_2 = L+1:length(tmp)
     idx_1 = idx_2 - L + 1;
     c = c - tmp(idx_1)*tmp_shift(idx_1)' + tmp(idx_2)*tmp_shift(idx_2)';
-    p = p - abs(tmp(idx_1)) + abs(tmp(idx_2));
+    p = p - abs(tmp(idx_1))+ abs(tmp(idx_2));
     c_(idx_1) = c; p_(idx_1) = p;
 end
 ratio = abs(p_).^2 ./ p.^2;
@@ -67,29 +67,31 @@ ratio = abs(p_).^2 ./ p.^2;
 %     if idx
 %     end
 % end
-%% 2
+%% pss xcorr
 pss = get_pss();
-pss_ = resample(pss, 100, 250);
+pss_up = repmat(pss, [1 5]);
+pss_up = reshape(pss_up', [numel(pss_up), 1]);
+pss_dsamp = downsample(pss_up, 12);
 figure;
-plot(mag2db(abs(signal))-40);
+% plot(mag2db(abs(signal))-40);
+% hold on;
+plot(mag2db(abs(xcorr(signal, pss_dsamp))));
 hold on;
-plot(mag2db(abs(xcorr(pss_, signal))));
+plot(mag2db(abs(xcorr(signal, resample(pss, 10, 24)))));
 
-%% 3
-
-[res, n] = frame_detect_pw(IQ_Sample_file, 100e6, 10e6);
-for idx = 1:n
-    s = res(idx);
-    frame = read_complex_binary2(IQ_Sample_file, 10e6, s);
-    subplot(2, 1, 1);
-    plot(mag2db(abs(frame)));
-    % xline([1e5 e-s+1e5]);
-    subplot(2, 1, 2);
-    [frame_fft, freq] = fft_avg(frame, 100e6, 10e6);
-    plot(freq, mag2dB(abs(frame_fft)));
-    xlim([-1e6 1e6]);
-    pause(.5);
+%% down sample test
+[pss, p] = get_pss();
+t = linspace(0, 1056/240e6, 440)';
+pss_dsamp_2 = zeros(440, 1);
+for idx = 1:1056
+    pss_dsamp_2 = pss_dsamp_2+sinc(t*240e6+1-idx)*p(idx);
 end
-
-%% waterfall
-n_fft = 1e6;
+pss_dsamp_1 = resample(pss, 10, 24);
+figure;
+subplot(2,1,1);
+plot(mag2db(abs(xcorr(signal, pss_dsamp_1))));
+xlim([2e7 4e7-1]);
+subplot(2,1,2);
+% plot(mag2db(abs(xcorr(signal, pss_dsamp_2))));
+plot(mag2db(abs(filter(conj(pss_dsamp_1(end:-1:1)), 1, signal))));
+% xlim([2e7 4e7-1]);

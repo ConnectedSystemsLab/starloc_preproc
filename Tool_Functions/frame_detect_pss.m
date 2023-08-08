@@ -1,45 +1,64 @@
-function [is_frame_exist] = frame_detect_pss(file_path, sample_rate)
-% frame detection algorithm based on correlation with pss sequence
+function [frame_begin_idx] = frame_detect_pss(file_path, sample_rate)
+% frame detection algorithm based on pss sequence & matched filter
+% input: the path of .dat file; sample_rate
+% output: the index of frames
 
 fprintf("Decting frames in %s\n", file_path);
 addpath ../Tool_Functions/
 
+N = 1024;
+Fs = 240e6;
 t_read = 1e-2;
 num_samples = t_read*sample_rate;
-d_samp = 10;
-is_frame_exist = false;
+frame_begin_idx = [];
 f = fopen(file_path, 'rb');
+[pss, ~] = get_pss();
+pss_resamp = resample(pss, sample_rate, 240e6);
 
-% noise estimation
+% noise estimation (assumes data begins with noise)
 [noise, is_end] = fread_complex(f, num_samples);
-noise_mean = mean(noise);
-noise_var = var(noise);
+% matched filter based detection
+filter_kernal = conj(pss_resamp(end:-1:1));
+z = zeros(length(filter_kernal)-1, 1);
 
-window_size = 5e3/d_samp;
-filter_kernal = ones(window_size, 1)/window_size;
-z = zeros(window_size-1, 1);
+read_idx = 1;           % # of read times
+% need to be adjusted
+threshold = 7*mean(abs(filter(filter_kernal, 1, noise)));
 
-read_idx = 0;           % # of read times
-pw_threshold = 2*noise_var;
 while ~is_end
     read_idx = read_idx+1;
     
     [signal, is_end] = fread_complex(f, num_samples);
-    signal = signal(1:d_samp:end);
-    sig_pw = abs(signal).^2;
     
-    [pw_avg, z] = filter(filter_kernal, 1, sig_pw, z);
-    idx_above_thresh = pw_avg > pw_threshold;
+    [res, z] = filter(filter_kernal, 1, signal, z);
+    idx_above_thresh = abs(res) > threshold;
     idx_above_thresh = find(idx_above_thresh);
 
     if ~isempty(idx_above_thresh)
-        is_frame_exist = true;
-        subplot(2, 1, 1);
-        plot(mag2db(abs(signal)));
-        subplot(2, 1, 2);
-        plot(mag2dB(pw_avg));
-        yline(mag2dB(pw_threshold))
-        pause(.1);
+        % eliminate adjacent results
+        for idx = 1:length(idx_above_thresh)-1
+            idx_1 = idx_above_thresh(idx);
+            idx_2 = idx_above_thresh(idx+1);
+            if idx_2-idx_1 < ceil(sample_rate/Fs*N/8+3)*2
+                if abs(res(idx_1)) >= abs(res(idx_2))
+                    idx_above_thresh(idx+1) = 0;
+                else
+                    idx_above_thresh(idx) = 0;
+                end
+            end
+        end
+        idx_above_thresh = nonzeros(idx_above_thresh);
+        frame_begin_idx = [frame_begin_idx; ...
+            idx_above_thresh+(read_idx-1)*num_samples];
+        
+        % for visualize & debug
+        % subplot(2, 1, 1);
+        % plot(mag2db(abs(signal)));
+        % xline(idx_above_thresh);
+        % subplot(2, 1, 2);
+        % plot(mag2dB(abs(res)));
+        % yline(mag2dB(threshold))
+        % pause(.1);
     end
 end
 end
