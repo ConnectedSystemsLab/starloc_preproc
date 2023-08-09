@@ -1,11 +1,16 @@
-# from gnuradio import uhd
 import uhd
 import numpy as np
+import pandas as pd
 from datetime import datetime, timedelta
 import os
 
 def capture_signal(center_frequency, bandwidth, duration, output_file):
     
+    # try:
+    #     usrp = uhd.usrp.MultiUSRP()
+    # except:
+    #     print('[ERROR] usrp not connected')
+    #     return
     usrp = uhd.usrp.MultiUSRP()
     # usrp.set_rx_subdev_spec("A:0") # cause error
 
@@ -42,19 +47,29 @@ def capture_signal(center_frequency, bandwidth, duration, output_file):
     stream_cmd = uhd.types.StreamCMD(uhd.types.StreamMode.stop_cont)
     streamer.issue_stream_cmd(stream_cmd)
 
+    # Save File
+    # TODO: multithread
     print(len(samples))
     print(samples[0:10])
+    os.mknod(output_file)
+    with open(output_file, "wb") as f:
+        np.save(f, samples)
 
 if __name__ == "__main__":
     
-    center_freq_list = [11.325e9, 11.575e9, 11.825e9, 11.950e9] 
+    # center_freq_list = [11.325e9, 11.575e9, 11.825e9, 11.950e9]
+    center_freq_list = [11.575e9] 
     bandwidth = 100e6
     rec_duration = 30 # duration for each capture from usrp in seconds
     start_time = datetime.now()
     stop_time = start_time + timedelta(minutes=1)
-    dest_folder = "~/Desktop/usrp_data/" # enter super directory in which all usrp data is stored
+    dest_folder = "/home/jidazhang/Desktop/usrp_data/" # enter super directory in which all usrp data is stored
     dest_sub_folder = "usrp_signal_capture_"+str(start_time.year)+"_"+str(start_time.month)+"_"+str(start_time.day)
     
+    # create directory
+    if not os.path.exists(os.path.join(dest_folder, dest_sub_folder)):
+        os.mkdir(os.path.join(dest_folder, dest_sub_folder))
+
     while True:
         if stop_time <= datetime.now():
             break
@@ -63,6 +78,6 @@ if __name__ == "__main__":
                 current_time = datetime.now()
                 output_filename = "IQsamples_"+str(current_time.year)+"_"+str(current_time.month)+\
                     "_"+str(current_time.day)+"_"+str(current_time.hour)+"_"+str(current_time.minute)+"_"+\
-                    str(current_time.second)+"_"+".dat"
+                    str(current_time.second)+"_"+str(center_freq/1e9)+"G_"+str(bandwidth/1e6)+"M.npy"
                 output_file_path = os.path.join(dest_folder, dest_sub_folder, output_filename)
                 capture_signal(center_frequency=center_freq, bandwidth=bandwidth, duration=rec_duration, output_file=output_file_path)
