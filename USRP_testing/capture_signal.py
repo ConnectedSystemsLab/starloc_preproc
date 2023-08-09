@@ -1,3 +1,4 @@
+# from gnuradio import uhd
 import uhd
 import numpy as np
 from datetime import datetime, timedelta
@@ -6,9 +7,9 @@ import os
 def capture_signal(center_frequency, bandwidth, duration, output_file):
     
     usrp = uhd.usrp.MultiUSRP()
-    usrp.set_rx_subdev_spec("A:0")
+    # usrp.set_rx_subdev_spec("A:0") # cause error
 
-    num_samps = duration*bandwidth # number of samples to be received
+    num_samps = int(duration*bandwidth) # number of samples to be received
     center_freq = center_frequency # Hz
     sample_rate = bandwidth # Hz - bandwidth cannot be greater than the sample rate
     # gain = 50 # dB
@@ -16,13 +17,14 @@ def capture_signal(center_frequency, bandwidth, duration, output_file):
     usrp.set_rx_rate(sample_rate, 0)
     usrp.set_rx_freq(uhd.libpyuhd.types.tune_request(center_freq), 0)
     # usrp.set_rx_gain(gain, 0)
-    usrp.set_rx_agc(True, 0)
+    # usrp.set_rx_agc(True, 0) # may not be supported by usrp x310
 
     # Set up the stream and receive buffer
     stream_args = uhd.usrp.StreamArgs("fc32", "sc16")
     stream_args.channels = [0]
     metadata = uhd.types.RXMetadata()
     streamer = usrp.get_rx_stream(stream_args)
+    # streamer.get_max_num_samps() = 1996
     recv_buffer = np.zeros((1, 1000), dtype=np.complex64)
 
     # Start Stream
@@ -49,16 +51,18 @@ if __name__ == "__main__":
     bandwidth = 100e6
     rec_duration = 30 # duration for each capture from usrp in seconds
     start_time = datetime.now()
-    stop_time = start_time + timedelta(hours=12)
+    stop_time = start_time + timedelta(minutes=1)
     dest_folder = "~/Desktop/usrp_data/" # enter super directory in which all usrp data is stored
-    dest_sub_folder = "usrp_signal_capture_"+start_time.year+"_"+start_time.month+"_"+start_time.day
+    dest_sub_folder = "usrp_signal_capture_"+str(start_time.year)+"_"+str(start_time.month)+"_"+str(start_time.day)
     
     while True:
-        if stop_time >= datetime.now():
+        if stop_time <= datetime.now():
             break
         else:
             for center_freq in center_freq_list:
                 current_time = datetime.now()
-                output_filename = "IQsamples_"+current_time.year+"_"+current_time.month+"_"+current_time.day+"_"+current_time.hour+"_"+current_time.minute+"_"+current_time.second+"_"+".dat"
+                output_filename = "IQsamples_"+str(current_time.year)+"_"+str(current_time.month)+\
+                    "_"+str(current_time.day)+"_"+str(current_time.hour)+"_"+str(current_time.minute)+"_"+\
+                    str(current_time.second)+"_"+".dat"
                 output_file_path = os.path.join(dest_folder, dest_sub_folder, output_filename)
                 capture_signal(center_frequency=center_freq, bandwidth=bandwidth, duration=rec_duration, output_file=output_file_path)
