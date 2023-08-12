@@ -7,7 +7,7 @@ function [frame_begin_idx] = frame_detect_pss(file_path, sample_rate)
 fprintf("Decting frames in %s\n", file_path);
 addpath ../Tool_Functions/
 
-N = 1024;
+N = 1024+32;
 Fs = 240e6;
 t_read = 1e-2;
 num_samples = t_read*sample_rate;
@@ -24,7 +24,7 @@ z = zeros(length(filter_kernal)-1, 1);
 
 read_idx = 1;           % # of read times
 % need to be adjusted
-threshold = 10*mean(abs(filter(filter_kernal, 1, noise)));
+threshold = 15*mean(abs(filter(filter_kernal, 1, noise)));
 
 while ~is_end
     read_idx = read_idx+1;
@@ -38,18 +38,23 @@ while ~is_end
 
     if ~isempty(idx_above_thresh)
         % eliminate adjacent results
-        for idx = 1:length(idx_above_thresh)-1
+        for idx = 1:length(idx_above_thresh)
+            if tmp(idx) == 0
+                continue;
+            end
             idx_1 = idx_above_thresh(idx);
-            idx_2 = idx_above_thresh(idx+1);
-            if idx_2-idx_1 < ceil(sample_rate/Fs*N/8+3)*2
-                if abs(res(idx_1)) >= abs(res(idx_2))
-                    tmp(idx+1) = 0;
-                else
-                    tmp(idx) = 0;
+            idx_2_ = abs(idx_above_thresh-idx_1) <= 20*ceil(sample_rate/Fs*N);
+            idx_2 = idx_above_thresh(idx_2_);
+            [~, ii_] = max(abs(res(idx_2)));
+            idx_2_max = idx_2(ii_);
+            % jj = idx_2 ~= idx_2_max;
+            for mm = 1:length(idx_2)
+                if idx_2(mm) ~= idx_2_max
+                    tmp(tmp == idx_2(mm)) = 0;
                 end
             end
         end
-        idx_above_thresh = nonzeros(tmp);
+        idx_above_thresh = nonzeros(tmp) - ceil(sample_rate/Fs*N);
         frame_begin_idx = [frame_begin_idx; ...
             idx_above_thresh+(read_idx-1)*num_samples];
         
