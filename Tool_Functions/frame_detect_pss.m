@@ -59,13 +59,13 @@ while ~is_end
             idx_above_thresh+(read_idx-1)*num_samples];
         
         % for visualize & debug
-        subplot(2, 1, 1);
-        plot(mag2db(abs(signal)));
-        xline(idx_above_thresh);
-        subplot(2, 1, 2);
-        plot(mag2dB(abs(res)));
-        yline(mag2dB(threshold))
-        pause(.1);
+        % subplot(2, 1, 1);
+        % plot(mag2db(abs(signal)));
+        % xline(idx_above_thresh);
+        % subplot(2, 1, 2);
+        % plot(mag2dB(abs(res)));
+        % yline(mag2dB(threshold))
+        % pause(.1);
     end
 end
 end
