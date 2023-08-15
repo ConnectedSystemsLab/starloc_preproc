@@ -8,4 +8,4 @@
 *.ipynb
 Satellite_Sim/matlab_code/Starlink.tle
 /bash_scripts/newf_iles
-./Tool_Functions/get_file_name.m
+Tool_Functions/get_file_name.m
