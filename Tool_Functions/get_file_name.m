@@ -7,7 +7,8 @@ function file_name = get_file_name( ...
     bw)
 % All .dat files are named strictly as 'mm_dd/time_freq_bw,dat'
 freq_str = num2str(center_freq/1e9);
-root_path = "/home/jidazhang/Desktop/data/";
+root_path = "/Users/ishani/UIUC/Research/LeoSat/Positioning/USRP_Data/";
+disp(root_path);
 date_path = num2str(mon)+"_"+num2str(day)+"/";
 time_path = "time_"+num2str(hr)+"_"+num2str(minu)+"_";
 freq_path = "freq_"+freq_str(1:2)+"_"+freq_str(4:end)+"G"+"_";
