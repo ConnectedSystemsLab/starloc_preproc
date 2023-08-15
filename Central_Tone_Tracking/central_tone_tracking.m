@@ -11,7 +11,7 @@ IQ_Sample_file = get_file_name(mon, day, hr, minu, center_freq, sample_rate);
 [pss_begin_idx] = frame_detect_pss(IQ_Sample_file, sample_rate);
 frame_num = length(pss_begin_idx);
 
-%% downsample & track
+%% downsample & 1-st track
 T_f = 1/750;
 N_f = round(T_f*sample_rate);
 Fs = 240e6;
@@ -29,8 +29,10 @@ freq_bin = central_bw/n_fft;
 tone_spacing = round(44e3/freq_bin);
 
 idx = pss_begin_idx(1);
+num_dopps = ceil((pss_begin_idx(end)-pss_begin_idx(1))/num_read_samples);
 num_tones = 11;
-tone_list = [];
+tone_list = zeros(num_dopps, num_tones);
+tone_idx = 0;
 
 while idx <= pss_begin_idx(end)
     sig = read_complex_binary2(IQ_Sample_file, num_read_samples, idx);
@@ -49,18 +51,51 @@ while idx <= pss_begin_idx(end)
             sum_max = s;
         end
     end
-    tone_list = [tone_list; f_tone_begin];
+    tone_idx = tone_idx+1;
+    tone_list(tone_idx, :) = f_tone_begin;
     idx = idx+num_read_samples;
     % for visualize & debug
     % plot(f, sig_fft_abs);
     % xlim([f(1) f(end)]);
-    % xline(f_tone_begin);
-    
+    % xline(f_tone_begin);    
     % pause(.1)
 end
 
+%% 2-nd tracking using linear regression
+t = [0:num_read_samples:(num_dopps-1)*num_read_samples]'/sample_rate;
+% linear function: yi = ki*t+bi
+[k, b] = deal(zeros(num_tones, 1));
+for idx = 1:num_tones
+    [k(idx), b(idx)] = least_square(t, tone_list(:,idx));
+end
+% algorithm 1
+for idx = 1:num_tones
+    for t_idx = 1:num_dopps
+        t_ = t(t_idx);
+        dop = tone_list(t_idx, idx);
+        [~, nearest_tone_idx] = min(abs(dop-k*t_-b));
+        if nearest_tone_idx ~= idx
+            % adjust the regression
+            tone_list(t_idx, :) = tone_list(t_idx, :)...
+                -tone_spacing*freq_bin*(nearest_tone_idx-idx);
+            for ii = 1:num_tones
+                [k(ii), b(ii)] = least_square(t, tone_list(:,ii));
+            end
+        end
+    end
+end
+figure; hold on;
+for idx = 1:num_tones
+    plot(t, tone_list(:, idx));
+    plot(t, k(idx)*t+b(idx), '--');
+end
 %% result verification
-
-stft = spectrogram(sig_dsamp, hanning(n_fft), 0, n_fft, central_bw, 'centered');
-mesh(abs(stft));
-
+figure; hold on;
+t = [0:num_read_samples:(num_dopps-1)*num_read_samples]/sample_rate;
+for idx = 1:num_tones
+    plot(t, tone_list(:, idx));
+end
+% stft = spectrogram(sig_dsamp, hanning(n_fft), 0, n_fft, central_bw, 'centered');
+% mesh(abs(stft));
+%%
+[f_dopp, t_dopp] = central_tone_tracking(IQ_Sample_file, pss_begin_idx, sample_rate);

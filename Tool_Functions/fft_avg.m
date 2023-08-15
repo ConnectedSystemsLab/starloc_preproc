@@ -1,4 +1,5 @@
 function [sig_fft, f] = fft_avg(sig, bw, n_fft)
+% calculates the average spectrum power
 % length(sig) = multiple of n_fft
 
 l = length(sig);
@@ -9,6 +10,6 @@ end
 f = linspace(-bw/2, bw/2, n_fft);
 signal_reshape = reshape(sig, [n_fft l/n_fft]);
 signal_reshape_fft = fftshift(fft(signal_reshape, n_fft));
-sig_fft = mean(abs(signal_reshape_fft), 2);
+sig_fft = mean(abs(signal_reshape_fft).^2, 2);
 
 end
