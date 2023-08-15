@@ -20,18 +20,24 @@ filter_kernal = ones(window_size, 1)/window_size;
 z = zeros(window_size-1, 1);
 
 is_end = false;
-read_idx = 0;           % # of read times
+read_idx = 1;           % # of read times
 % detect_count = 0;       % # of detected frame
-pw_threshold = -15;     % 10*log10(*), dB
+[noise, is_end] = fread_complex(f, num_samples);
+noise_pw = abs(noise).^2;
+[n_sig, z] = filter(filter_kernal, 1, noise_pw, z);
+pw_threshold = 5*mean(n_sig);
 while ~is_end
     read_idx = read_idx+1;
     
     [signal, is_end] = fread_complex(f, num_samples);
+    if read_idx < 300
+        continue;
+    end
     signal = signal(1:d_samp:end);
     sig_pw = abs(signal).^2;
     
     [pw_avg, z] = filter(filter_kernal, 1, sig_pw, z);
-    idx_above_thresh = pw_avg > 10^(pw_threshold/10);
+    idx_above_thresh = pw_avg > pw_threshold;
     idx_above_thresh = find(idx_above_thresh);
     % idx_above_thresh = diff(idx_above_thresh);
     % 
