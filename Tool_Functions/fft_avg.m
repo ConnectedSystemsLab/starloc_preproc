@@ -4,7 +4,9 @@ function [sig_fft, f] = fft_avg(sig, bw, n_fft)
 
 l = length(sig);
 if mod(l, n_fft) ~= 0
-    error('length of signal should be multiple of fft points');
+    % error('length of signal should be multiple of fft points');
+    sig = sig(1:end-mod(l, n_fft));
+    l = length(sig);
 end
 
 f = linspace(-bw/2, bw/2, n_fft);
