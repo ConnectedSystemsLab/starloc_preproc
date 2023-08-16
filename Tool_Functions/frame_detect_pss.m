@@ -1,4 +1,4 @@
-function [frame_begin_idx] = frame_detect_pss(file_path, sample_rate)
+function [frame_begin_idx] = frame_detect_pss(file_path, sample_rate, if_visual)
 % frame detection algorithm based on pss sequence & matched filter
 % input: the path of .dat file; sample_rate
 % output: the index of frames
@@ -58,14 +58,16 @@ while ~is_end
         frame_begin_idx = [frame_begin_idx; ...
             idx_above_thresh+(read_idx-1)*num_samples];
         
+        if if_visual
         % for visualize & debug
-        % subplot(2, 1, 1);
-        % plot(mag2db(abs(signal)));
-        % xline(idx_above_thresh);
-        % subplot(2, 1, 2);
-        % plot(mag2dB(abs(res)));
-        % yline(mag2dB(threshold))
-        % pause(.1);
+            subplot(2, 1, 1);
+            plot(mag2db(abs(signal)));
+            xline(idx_above_thresh);
+            subplot(2, 1, 2);
+            plot(mag2dB(abs(res)));
+            yline(mag2dB(threshold))
+            pause(.1);
+        end
     end
 end
 end
