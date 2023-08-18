@@ -19,3 +19,12 @@ end
 frame_num = length(pss_begin_idx);
 
 local_pss = resample(get_pss(), sample_rate, 240e6);
+
+for idx = 1:frame_num
+    recv = read_complex_binary2(IQ_Sample_file, N_f, pss_begin_idx(idx));
+    [c,lags] = xcorr(recv, sss_resamp);
+    [max_xcorr, sss_idx] = max(abs(c));
+%     scatter(lags(sss_idx), max_xcorr,'filled'); 
+%     hold on;
+%     plot(lags, abs(c));
+end

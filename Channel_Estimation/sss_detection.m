@@ -17,6 +17,10 @@ if isempty(pss_begin_idx)
     [pss_begin_idx] = frame_detect_pss(IQ_Sample_file, sample_rate);
 end
 
+%% get frames 
+
+T_f = 1/750;
+N_f = T_f*sample_rate; % number of symbols in a frame
 frame_num = length(pss_begin_idx);
 
 %%
