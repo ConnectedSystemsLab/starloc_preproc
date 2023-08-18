@@ -101,7 +101,11 @@ if if_visual
         plot(t, tone_list(:, idx));
     end
     plot(t, res);
+    title('Tracked central tone');
+    xlabel('t/s');
+    ylabel('f_d/Hz');
 end
+
 % stft = spectrogram(tmp, hanning(n_fft), 0, n_fft, central_bw, 'centered');
 % mesh(abs(stft));
 

@@ -3,7 +3,7 @@
 clear all; clc;
 addpath ../Tool_Functions/;
 
-mon = 8; day = 12; hr = 11; minu = 1;
+mon = 8; day = 10; hr = 16; minu = 8;
 sample_rate = 1.024e6;
 center_freq = 11.575e9;
 bw = sample_rate;
@@ -16,7 +16,7 @@ f = fopen(IQ_Sample_file, 'rb');
 is_end = false;
 num_samples = sample_rate*1;
 frame_idx = 0;
-n_fft = 1024;
+n_fft = 256;
 % sig_fft = zeros(n_fft, 1);
 % freq = linspace(-bw/2, bw/2, n_fft);
 detect_threshold = -55;     % dB
@@ -31,6 +31,7 @@ while ~is_end
     end
     [sig_fft, freq] = fft_avg(signal, bw, n_fft);
     % spectrogram(signal, hanning(1024), 500, 1024, sample_rate, 'centered');
-    plot(freq, sig_fft);
+    % sig_fft(abs(freq-25523.9)<1e3) = mean(sig_fft(abs(freq-24523.9)>1e3));
+    plot(freq, mag2db(sig_fft));
     pause(.1);
 end

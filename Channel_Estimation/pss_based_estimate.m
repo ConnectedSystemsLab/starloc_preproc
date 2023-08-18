@@ -2,13 +2,13 @@ clear all; close all; clc;
 addpath ../Tool_Functions/;
 
 % load file
-mon = 8; day = 12; hr = 10; minu = 32;
+mon = 8; day = 12; hr = 10; minu = 7;
 sample_rate = 100e6;
 center_freq = 11.575e9;
 IQ_Sample_file = get_file_name(mon, day, hr, minu, center_freq, sample_rate);
 
 %% pss detect
-[pss_begin_idx] = frame_detect_pss(IQ_Sample_file, sample_rate);
+[pss_begin_idx] = frame_detect_pss(IQ_Sample_file, sample_rate, 0);
 T_f = 1/750;
 N_f = T_f*sample_rate;
 frame_num = length(pss_begin_idx);
@@ -43,11 +43,14 @@ end
 pss = resample(get_pss(), sample_rate, 240e6);
 pss_len = length(pss);
 for idx = 1:frame_num
+    if frame_num<2000
+        continue;
+    end
     recv = read_complex_binary2(IQ_Sample_file, pss_len, pss_begin_idx(idx));
     t_dopp = [0:pss_len-1]'/sample_rate;
-    f_d = dopp_param(1)*t(idx)+dopp_param(2);
-    dopp = exp(-j*2*pi*f_d*t_dopp);
-    recv = recv.*dopp;
+    % f_d = dopp_param(1)*t(idx)+dopp_param(2);
+    % dopp = exp(-j*2*pi*f_d*t_dopp);
+    % recv = recv.*dopp;
     ratio = recv./pss;      % 440*1 complex
     amplitude(idx) = mean(abs(ratio));
     phase(idx) = phase_avg(angle(ratio));
