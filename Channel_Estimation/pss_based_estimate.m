@@ -43,7 +43,7 @@ end
 pss = resample(get_pss(), sample_rate, 240e6);
 pss_len = length(pss);
 for idx = 1:frame_num
-    if frame_num<2000
+    if idx<2000
         continue;
     end
     recv = read_complex_binary2(IQ_Sample_file, pss_len, pss_begin_idx(idx));

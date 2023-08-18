@@ -4,7 +4,7 @@ function [frame_begin_idx] = frame_detect_pss(file_path, sample_rate, if_visual)
 % output: the index of frames
 % note: only high sample rate will work (e.g., 100 MHz)
 
-fprintf("Decting frames in %s\n", file_path);
+fprintf("Detecting frames in %s\n", file_path);tic;
 addpath ../Tool_Functions/
 
 N = 1024+32;
@@ -70,4 +70,5 @@ while ~is_end
         end
     end
 end
+fprintf("Detect done in %d s, %d frames found in total\n", round(toc), length(frame_begin_idx));
 end
