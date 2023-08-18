@@ -17,16 +17,8 @@ if isempty(pss_begin_idx)
     [pss_begin_idx] = frame_detect_pss(IQ_Sample_file, sample_rate);
 end
 
-%% get frames 
-
-T_f = 1/750;
-N_f = T_f*sample_rate;
 frame_num = length(pss_begin_idx);
-t_read = 1e-2;
-num_samples = t_read*sample_rate;
-% noise estimation (assumes data begins with noise)
-f = fopen(IQ_Sample_file, 'rb');
-[noise, is_end] = fread_complex(f, num_samples);
+
 %%
 SSS = get_sss(N);
 scatter(real(SSS), imag(SSS));
@@ -40,10 +32,7 @@ sss(1:N_g) = sss(end-N_g+1:end);
 figure;
 plot(abs(sss));
 sss_resamp = resample(sss, sample_rate, 240e6);
-% filter_kernel = conj(sss_resamp(end:-1:1));
-% z = zeros(length(filter_kernel)-1, 1);
-% [res, z] = filter(filter_kernel, 1, signal, z);
-% threshold = 15*mean(abs(filter(filter_kernel, 1, noise)));
+
 figure;
 sss_idx_arr = [];
 for idx = 1:frame_num
