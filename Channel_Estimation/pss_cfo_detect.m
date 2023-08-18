@@ -15,33 +15,37 @@ frame_num = length(pss_begin_idx);
 
 %% CFO estimation
 
-pss = get_pss();
-pss = pss(33:end);
+pss = get_pss();                
+pss = pss(33:end); % 1024 points pss sequence (cp removed)
 [t, angs] = deal(zeros(frame_num, 1));
 t_diff = diff(pss_begin_idx)/N_f*T_f;       % (s)
 for idx = 2:frame_num
     t(idx) = t(idx-1)+t_diff(idx-1);
 end
+
 for idx = 1:frame_num
     pss_recv = read_complex_binary2(IQ_Sample_file, 440, pss_begin_idx(idx));
+    % resample the recieved signal to 240 MHz
     pss_recv = resample(pss_recv, 240, 100);
+    % remove cp
     pss_recv = pss_recv(33:end);
-
+    
+    % extract 7 repeated sub-sequences
     sub_idxs = 128*[1:7]';
     sub_seq = zeros(7, 128);
     for ii = 1:7
         sub_seq(ii,:) = pss_recv(sub_idxs(ii)+1:sub_idxs(ii)+128);
     end
+    % calculate subseq_{i+1}/subseq_{i}
     for ii = 1:6
-        aa(ii) = sum(conj(sub_seq(ii+1,:)).*sub_seq(ii,:));
+        ratio(ii) = sum(conj(sub_seq(ii+1,:)).*sub_seq(ii,:));
     end
-    angs(idx) = mean(angle(aa));
-    % t = (peak_idxs-peak_idxs(peak_num/2+1/2))/sample_rate;
-    % subplot(2, 1, 2); plot(t, unwrap(angle(cor(peak_idxs))));
-    % [k, b] = least_square(t, unwrap(angle(cor(peak_idxs))));
-    % hold on; ylim([-1.2 1.2]);
-    % plot(t, k*t+b, '--');
+    % average the angle of 6 ratios
+    angs(idx) = mean(angle(ratio));
 end
+
+% calculate cfo from the angles
 cfo = -(240e6/(2*pi*128))*unwrap(angs);
+% do the linear regression
 [k, b] = least_square(t, cfo);
 figure(1); plot(t, cfo); hold on; plot(t, k*t+b, '--', LineWidth=1);
