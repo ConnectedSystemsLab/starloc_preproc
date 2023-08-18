@@ -54,7 +54,7 @@ while idx <= pss_begin_idx(end)
         % for visualize & debug
         plot(f, sig_fft_abs);
         xlim([f(1) f(end)]);
-        xline(f_tone_begin);    
+        % xline(f_tone_begin);    
         pause(.1);
     end
 end
