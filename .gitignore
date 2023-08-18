@@ -1,7 +1,7 @@
 *.asv
 *.DS_Store
-./USRP_testing/ofdm_analysis
-./USRP_testing/spectrograms
+USRP_testing/ofdm_analysis
+USRP_testing/spectrograms
 *.csv
 *.php
 *.mat
