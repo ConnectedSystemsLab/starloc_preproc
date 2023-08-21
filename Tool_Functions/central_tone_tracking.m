@@ -90,6 +90,9 @@ for idx = 1:num_tones
     end
 end
 res = mean(tone_list, 2);
+if num_tones == 11
+    res = res+44e3;
+end
 [k, b] = least_square(t, res);
 dopp_param = [k;b];
 
