@@ -14,7 +14,7 @@ IQ_Sample_file = get_file_name(mon, day, hr, minu, center_freq, sample_rate);
 load('pss_begin_idx.mat');
 
 if isempty(pss_begin_idx)
-    [pss_begin_idx] = frame_detect_pss(IQ_Sample_file, sample_rate);
+    [pss_begin_idx] = frame_detect_pss(IQ_Sample_file, sample_rate, 0);
 end
 
 %% get frames 
@@ -40,6 +40,9 @@ sss_resamp = resample(sss, sample_rate, 240e6);
 figure;
 sss_idx_arr = [];
 for idx = 1:frame_num
+    if idx < 2000
+        continue;
+    end
     recv = read_complex_binary2(IQ_Sample_file, N_f, pss_begin_idx(idx));
     [c,lags] = xcorr(recv, sss_resamp);
     [max_xcorr, sss_idx] = max(abs(c));
@@ -60,6 +63,7 @@ for idx = 1:frame_num
     ylim([0,2]);
     subplot(2,1,2)
     plot(unwrap(angle(H)));
+    ylim([-50 20]);
     pause(0.2);
     clf;
 end
