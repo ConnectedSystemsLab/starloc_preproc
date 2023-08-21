@@ -39,10 +39,8 @@ sss_resamp = resample(sss, sample_rate, 240e6);
 
 figure;
 sss_idx_arr = [];
-for idx = 1:frame_num
-    if idx < 2000
-        continue;
-    end
+H_arr = []
+for idx = 2000:frame_num
     recv = read_complex_binary2(IQ_Sample_file, N_f, pss_begin_idx(idx));
     [c,lags] = xcorr(recv, sss_resamp);
     [max_xcorr, sss_idx] = max(abs(c));
@@ -58,14 +56,15 @@ for idx = 1:frame_num
 %     plot(i,abs(rx_sss));
 %     figure;
     H = fft(rx_sss)./fft(sss_resample);
-    subplot(2,1,1)
-    plot(abs(H));
-    ylim([0,2]);
-    subplot(2,1,2)
-    plot(unwrap(angle(H)));
-    ylim([-50 20]);
-    pause(0.2);
-    clf;
+    H_arr = [H_arr H];
+    
+%     subplot(2,1,1)
+%     plot(abs(H));
+%     ylim([0,2]);
+%     subplot(2,1,2)
+%     plot(unwrap(angle(H)));
+%     pause(0.2);
+%     clf;
 end
 
 
