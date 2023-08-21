@@ -24,14 +24,14 @@ tone_spacing = round(44e3/freq_bin);
 
 idx = pss_begin_idx(1);
 num_dopps = ceil((pss_begin_idx(end)-pss_begin_idx(1))/num_read_samples);
-num_tones = 9;
+num_tones = 11;
 tone_list = zeros(num_dopps, num_tones);
 tone_idx = 0;
 % tmp = [];
 
 while idx <= pss_begin_idx(end)
     sig = read_complex_binary2(IQ_Sample_file, num_read_samples, idx);
-    % tmp = [tmp; resample(sig, 5e6, sample_rate)];
+    % tmp = [tmp; resample(sig, 1e6, sample_rate)];
     sig = sig.*exp(j*2*pi*F_spacing/2*[0:num_read_samples-1]'/sample_rate);
     sig = resample(sig, central_bw, sample_rate);
     [sig_fft_abs, f] = fft_avg(sig, central_bw, n_fft);

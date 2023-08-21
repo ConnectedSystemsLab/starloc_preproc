@@ -43,9 +43,9 @@ end
 pss = resample(get_pss(), sample_rate, 240e6);
 pss_len = length(pss);
 for idx = 1:frame_num
-    if idx<2000
-        continue;
-    end
+    % if idx<2000
+    %     continue;
+    % end
     recv = read_complex_binary2(IQ_Sample_file, pss_len, pss_begin_idx(idx));
     t_dopp = [0:pss_len-1]'/sample_rate;
     % f_d = dopp_param(1)*t(idx)+dopp_param(2);
