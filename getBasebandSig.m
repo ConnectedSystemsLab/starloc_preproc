@@ -9,13 +9,15 @@ x = zeros((N_sf+1)*N_sym*N_f, 1);   % time domain signal
 % the probability that a frame contains data
 binary_set=[0 1];
 Prob = [duty_ratio 1-duty_ratio];
+is_null = false;
 
 % avoid unnecessary computation:
 % if computed, then do not compute again
 pss_seq = nan;
 
 for frame = 1:N_f
-    is_null = randsrc(1, 1, [binary_set ; Prob]);
+    % is_null = randsrc(1, 1, [binary_set ; Prob]);
+    is_null = ~is_null;
     if is_null
         continue;
     end
