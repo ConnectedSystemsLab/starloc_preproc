@@ -21,6 +21,6 @@ F_g = F_delta - F_s;    % width of guard band between channels
 % Operating in baseband for simulations. Setting F_c = 0.
 F_c = F_ci(7);          % F_ci(7);
 % F_c = 0;          % F_ci(7);
-N_f = 8e2;              % # of generated frames
+N_f = 1e2;              % # of generated frames
 N_sym = T_sym*F_s;      % # of samples per symbol including guard interval
 duty_ratio = .5;         % probability that a frame contains signal

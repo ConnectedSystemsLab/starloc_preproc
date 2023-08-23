@@ -15,16 +15,16 @@ function [res, dopp_param, t] = central_tone_tracking(...
 T_f = 1/750;
 central_bw = 1.024e6;
 F_spacing = 234375;
-T_avg = 0.2;
+T_avg = 1;
 
 num_read_samples = T_avg*sample_rate;
-n_fft = 256*2;
+n_fft = 256*4;
 freq_bin = central_bw/n_fft;
 tone_spacing = round(44e3/freq_bin);
 
 idx = pss_begin_idx(1);
 num_dopps = ceil((pss_begin_idx(end)-pss_begin_idx(1))/num_read_samples);
-num_tones = 11;
+num_tones = 9;
 tone_list = zeros(num_dopps, num_tones);
 tone_idx = 0;
 % tmp = [];
@@ -54,6 +54,7 @@ while idx <= pss_begin_idx(end)
         % for visualize & debug
         plot(f, sig_fft_abs);
         xlim([f(1) f(end)]);
+        ylim([0 .4])
         % xline(f_tone_begin);    
         pause(.1);
     end
