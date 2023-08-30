@@ -2,20 +2,20 @@ clear all; close all; clc;
 addpath ../Tool_Functions/;
 
 % load file
-mon = 8; day = 22; hr = 11; minu = 1;
-sample_rate = 100e6;
+mon = 8; day = 29; hr = 16; minu = 41;
+sample_rate = 2e6;
 center_freq = 11.575e9;
 IQ_Sample_file = get_file_name(mon, day, hr, minu, center_freq, sample_rate);
 
 %% pss detect
-[pss_begin_idx] = frame_detect_pss(IQ_Sample_file, sample_rate, 1);
+[pss_begin_idx] = frame_detect_pss(IQ_Sample_file, sample_rate, 0);
 T_f = 1/750;
 N_f = T_f*sample_rate;
 frame_num = length(pss_begin_idx);
 
 %% coarse doppler compensation
 [dopp_list, dopp_param, t_dopp] = central_tone_tracking(...
-    IQ_Sample_file, pss_begin_idx, sample_rate, 1);
+    IQ_Sample_file, pss_begin_idx, sample_rate, 9, 1);
 %% doppler test
 load central_tone.mat;
 fs = 5e6;

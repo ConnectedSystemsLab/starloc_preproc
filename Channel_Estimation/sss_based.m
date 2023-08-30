@@ -31,7 +31,7 @@ ylim([-2, 2]);
 sss = zeros(T_sym*F_s, 1);
 sss(N_g+1:end) = sqrt(N)*ifft(SSS);
 sss(1:N_g) = sss(end-N_g+1:end);
-[tone_list, dopp_param, t] = central_tone_tracking(IQ_Sample_file, pss_begin_idx, sample_rate, 0);
+[tone_list, dopp_param, t] = central_tone_tracking(IQ_Sample_file, pss_begin_idx, sample_rate, 0, 11);
 
 %% get sss index and channel for each frame
 
@@ -52,12 +52,13 @@ for idx = 2000:3000
     [c,lags] = xcorr(doppler_corrected_recv, sss_resamp);
     [max_xcorr, sss_idx] = max(abs(c));
 % plot selected sss_idx 
-%     scatter(lags(sss_idx), max_xcorr,'filled'); 
-%     hold on;
-%     plot(lags, abs(c));
+    % scatter(lags(sss_idx), max_xcorr,'filled'); 
+    % hold on;
+    % plot(lags, abs(c));
     sss_idx_arr = [sss_idx_arr, pss_begin_idx(idx)+lags(sss_idx)];
     sss_noresample = sqrt(N)*ifft(SSS);
     sss_resample = resample(sss_noresample, sample_rate, 240e6);
+    % sss_resample = my_resample(sss_noresample, sample_rate, 240e6);
 
     rx_sss = doppler_corrected_recv(lags(sss_idx)+1:lags(sss_idx)+440);
     rx_sss = rx_sss(10:10+426); % jump into signal by 3/4th of cyclic prefix 
@@ -66,12 +67,12 @@ for idx = 2000:3000
     H_arr = [H_arr H]; % array that stores channels for all frames
 
 % uncomment to visualise channel:
-%     subplot(2,1,1)
-%     plot(abs(H));
-%     ylim([0,2]);
-%     subplot(2,1,2)
-%     plot(unwrap(angle(H)));
-%     pause(0.1);
-%     clf;
+    subplot(2,1,1)
+    plot(abs(H));
+    ylim([0,2]);
+    subplot(2,1,2)
+    plot(unwrap(angle(H)));
+    pause(0.1);
+    % clf;
 end
 

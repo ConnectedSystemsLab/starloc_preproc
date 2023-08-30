@@ -2,7 +2,7 @@ clear all; close all; clc;
 addpath ../Tool_Functions/;
 
 % load file
-mon = 8; day = 12; hr = 10; minu = 7;
+mon = 8; day = 12; hr = 10; minu = 1;
 sample_rate = 100e6;
 center_freq = 11.575e9;
 IQ_Sample_file = get_file_name(mon, day, hr, minu, center_freq, sample_rate);
@@ -15,7 +15,7 @@ frame_num = length(pss_begin_idx);
 
 %% coarse doppler compensation
 [dopp_list, dopp_param, t_dopp] = central_tone_tracking(...
-    IQ_Sample_file, pss_begin_idx, sample_rate, 0);
+    IQ_Sample_file, pss_begin_idx, sample_rate, 1, 9);
 
 %% SSS channel estimation
 SSS = get_sss(1024);
@@ -27,7 +27,7 @@ SSS_resamp = SSS;
 % 1:214 & 812:1024
 SSS_resamp(215:811) = 0;
 for idx = 1:frame_num
-    if idx < 2000
+    if idx < 800
         continue;
     end
     recv = read_complex_binary2(IQ_Sample_file, N_f, pss_begin_idx(idx));
@@ -47,6 +47,7 @@ for idx = 1:frame_num
         symbols = fft(frame_upsamp)./H;
         % scatterplot([symbols(1:214);symbols(812:end)]);
         scatter(real([symbols(1:214);symbols(812:end)]), imag([symbols(1:214);symbols(812:end)]));
+        % hold on;
         xlim([-5 5]); ylim([-5 5]);
     end
     % H = fft(a2(10:436))./SSS_resamp;

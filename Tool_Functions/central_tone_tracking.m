@@ -1,5 +1,5 @@
 function [res, dopp_param, t] = central_tone_tracking(...
-    IQ_Sample_file, pss_begin_idx, sample_rate, if_visual)
+    IQ_Sample_file, pss_begin_idx, sample_rate, if_visual, num_tones)
 % input
 % - file path
 % - frame begin index
@@ -11,8 +11,11 @@ function [res, dopp_param, t] = central_tone_tracking(...
 %   dopp_param = [k;b]
 % - t: time sequence
 
+f_hardware = 145642;
+
 % downsample & 1-st track
 T_f = 1/750;
+% central_bw = 1.024e6;
 central_bw = 1.024e6;
 F_spacing = 234375;
 T_avg = 1;
@@ -24,21 +27,24 @@ tone_spacing = round(44e3/freq_bin);
 
 idx = pss_begin_idx(1);
 num_dopps = ceil((pss_begin_idx(end)-pss_begin_idx(1))/num_read_samples);
-num_tones = 9;
+% num_tones = 11;
 tone_list = zeros(num_dopps, num_tones);
 tone_idx = 0;
 % tmp = [];
 
 while idx <= pss_begin_idx(end)
     sig = read_complex_binary2(IQ_Sample_file, num_read_samples, idx);
+    if length(sig) ~= num_read_samples
+        break;
+    end
     % tmp = [tmp; resample(sig, 1e6, sample_rate)];
     sig = sig.*exp(j*2*pi*F_spacing/2*[0:num_read_samples-1]'/sample_rate);
     sig = resample(sig, central_bw, sample_rate);
-    [sig_fft_abs, f] = fft_avg(sig, central_bw, n_fft);
+    [sig_fft_abs, f] = fft_avg(sig, central_bw, n_fft, f_hardware);
     
     sum_max = 0; 
     % remove hardware peak
-    sig_fft_abs(abs(f-147288)<freq_bin) = mean(sig_fft_abs);
+    sig_fft_abs(abs(f+2932.55)<4*freq_bin) = mean(sig_fft_abs);
     for f_idx = 1:n_fft-(num_tones-1)*tone_spacing
         s = sum(sig_fft_abs(f_idx+[0:num_tones-1]*tone_spacing));
         if s > sum_max
@@ -50,12 +56,13 @@ while idx <= pss_begin_idx(end)
     tone_list(tone_idx, :) = f_tone_begin;
     idx = idx+num_read_samples;
     
+    t_now = idx/sample_rate;
     if if_visual
         % for visualize & debug
         plot(f, sig_fft_abs);
         xlim([f(1) f(end)]);
-        ylim([0 .4])
-        % xline(f_tone_begin);    
+        % ylim([0 .1/2])
+        xline(f_tone_begin);    
         pause(.1);
     end
 end
