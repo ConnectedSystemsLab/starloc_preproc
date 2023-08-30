@@ -38,7 +38,7 @@ sss(1:N_g) = sss(end-N_g+1:end);
 figure;
 plot(abs(sss));
 sss_resamp = resample(sss, sample_rate, 240e6);
-sss_resamp = sss_resamp(10:10+426);
+% sss_resamp = sss_resamp(10:10+426);
 figure;
 sss_idx_arr = [];
 H_arr = [];
@@ -61,9 +61,11 @@ for idx = 2000:3000
     % sss_resample = my_resample(sss_noresample, sample_rate, 240e6);
 
     rx_sss = doppler_corrected_recv(lags(sss_idx)+1:lags(sss_idx)+440);
-    rx_sss = rx_sss(10:10+426); % jump into signal by 3/4th of cyclic prefix 
-
-    H = fft(rx_sss)./fft(sss_resamp);
+    rx_sss = rx_sss(7:7+426); % jump into signal by 3/4th of cyclic prefix 
+    sss_resamp_removecp = sss_resamp(14:14+426);
+    H = fft(rx_sss)./fft(sss_resamp_removecp);
+    H(1:2) = 0;
+    H(end-1:end) = 0;
     H_arr = [H_arr H]; % array that stores channels for all frames
 
 % uncomment to visualise channel:
