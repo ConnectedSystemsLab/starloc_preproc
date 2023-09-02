@@ -13,7 +13,7 @@ f = linspace(-bw/2, bw/2, n_fft);
 f_bin = f(2)-f(1);
 signal_reshape = reshape(sig, [n_fft l/n_fft]);
 signal_reshape_fft = fftshift(fft(signal_reshape, n_fft, 1), 1);
-sig_fft = mean(abs(signal_reshape_fft).^2, 2);
+sig_fft = sum(abs(signal_reshape_fft).^2, 2);
 % sig_fft(abs(f-f_hardware)<2*f_bin) = mean(sig_fft(abs(f-f_hardware)<2*f_bin));
 
 end

@@ -12,7 +12,7 @@ end
 
 %% System parameters
 % time setting
-startTime = datetime('now') + hours(5);     % UTC time
+% startTime = datetime('now') + hours(5);     % UTC time
 duration = seconds(minutes(10));
 stopTime = startTime + seconds(duration);
 sampleTime = 2;                             % s
@@ -28,7 +28,7 @@ minElevation = 60;
 c = physconst("Lightspeed");
 F_c = 11.575e9;     % carrier frequency
 lambda = c/F_c;     % wavelength
-d = lambda/2;       % antenna spacing
+d = lambda;       % antenna spacing
 % location 1
 lat(1) = +40.11389690596162;
 lon(1) = -88.22484814695467;
@@ -43,7 +43,7 @@ lon(4) = lon(3)+rad2deg(d/6378e3)/cosd(lat(1));
 gs = groundStation(sc, "Name", '1', "Latitude", lat, ...
     "Longitude", lon, "MinElevationAngle", minElevation);
 
-% res init
+% res init2
 numHours = stopTime - startTime;
 numSamples = seconds(numHours) / sampleTime;
 numSamples = round(numSamples);
@@ -63,7 +63,7 @@ AoA_1(~visible_idx) = nan;
 fprintf('simulation done, %d mins used\n', round(toc/60));
 
 %% figs
-close all;
+% close all;
 t = linspace(0, duration/60, numSamples+1);
 figure(1);
 hold on; grid on;

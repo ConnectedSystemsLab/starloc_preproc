@@ -15,22 +15,24 @@ f_hardware = 145642;
 
 % downsample & 1-st track
 T_f = 1/750;
-% central_bw = 1.024e6;
 central_bw = 1.024e6;
 F_spacing = 234375;
 T_avg = 1;
 
-num_read_samples = T_avg*sample_rate;
-n_fft = 256*4;
+n_fft = 10240;
+t_fft = n_fft/central_bw;
+num_read_samples = t_fft*sample_rate;
+sig_len = T_avg*central_bw;
 freq_bin = central_bw/n_fft;
 tone_spacing = round(44e3/freq_bin);
 
 idx = pss_begin_idx(1);
 num_dopps = ceil((pss_begin_idx(end)-pss_begin_idx(1))/num_read_samples);
-% num_tones = 11;
 tone_list = zeros(num_dopps, num_tones);
 tone_idx = 0;
-% tmp = [];
+thresh = 0;
+tt = [];
+f_d = [];
 
 while idx <= pss_begin_idx(end)
     sig = read_complex_binary2(IQ_Sample_file, num_read_samples, idx);
@@ -38,31 +40,49 @@ while idx <= pss_begin_idx(end)
         break;
     end
     % tmp = [tmp; resample(sig, 1e6, sample_rate)];
-    sig = sig.*exp(j*2*pi*F_spacing/2*[0:num_read_samples-1]'/sample_rate);
+    % sig = sig.*exp(j*2*pi*F_spacing/2*[0:num_read_samples-1]'/sample_rate);
     sig = resample(sig, central_bw, sample_rate);
-    [sig_fft_abs, f] = fft_avg(sig, central_bw, n_fft, f_hardware);
+    % [sig_fft_abs, f] = fft_avg(sig, central_bw, n_fft, f_hardware);
+    sig_fft = fftshift(fft(sig, n_fft))/n_fft;
+    sig_fft_abs = abs(sig_fft);
+    f = linspace(-central_bw/2, central_bw/2, n_fft)';
     
-    sum_max = 0; 
     % remove hardware peak
     sig_fft_abs(abs(f+2932.55)<4*freq_bin) = mean(sig_fft_abs);
-    for f_idx = 1:n_fft-(num_tones-1)*tone_spacing
-        s = sum(sig_fft_abs(f_idx+[0:num_tones-1]*tone_spacing));
-        if s > sum_max
-            f_tone_begin = f(f_idx+[0:num_tones-1]*tone_spacing);
-            sum_max = s;
-        end
-    end
-    tone_idx = tone_idx+1;
-    tone_list(tone_idx, :) = f_tone_begin;
-    idx = idx+num_read_samples;
+    
+    % find peaks
+    [pks,locs] = findpeaks(sig_fft_abs, ...
+        'MinPeakDistance', tone_spacing*0.9, ...
+        'NPeaks', 9, ...
+        'MinPeakHeight', thresh);
+
+    % sum_max = 0; 
+    % for f_idx = 1:n_fft-(num_tones-1)*tone_spacing
+    %     s = sum(sig_fft_abs(f_idx+[0:num_tones-1]*tone_spacing));
+    %     if s > sum_max
+    %         f_tone_begin = f(f_idx+[0:num_tones-1]*tone_spacing);
+    %         sum_max = s;
+    %     end
+    % end
+    % tone_idx = tone_idx+1;
+    % tone_list(tone_idx, :) = f_tone_begin;
     
     t_now = idx/sample_rate;
+    idx = idx+num_read_samples;
+    if t_now < 70
+        continue;
+    end
+    f_d = [f_d;f(locs)];
+    tt = [tt;repmat(t_now, [length(locs) 1])];
+
     if if_visual
         % for visualize & debug
+        % figure(10);
         plot(f, sig_fft_abs);
         xlim([f(1) f(end)]);
-        % ylim([0 .1/2])
-        xline(f_tone_begin);    
+        title(round(t_now));
+        % plot(f(locs), pks, 'r*');
+        % xline(f_tone_begin);    
         pause(.1);
     end
 end

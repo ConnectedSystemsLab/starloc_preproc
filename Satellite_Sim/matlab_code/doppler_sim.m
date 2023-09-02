@@ -16,10 +16,10 @@ end
 %% System parameters
 % time setting
 % startTime = datetime('now') + hours(5);     % UTC time
-startTime = datetime(2023,8,29,16,42,1) + hours(5);     % UTC time
-duration = seconds(minutes(11));
+startTime = datetime(2023,8,29,13,27,1) + hours(5);     % UTC time
+duration = seconds(minutes(2));
 stopTime = startTime + seconds(duration);
-sampleTime = 5;                             % s
+sampleTime = 1;                             % s
 sc = satelliteScenario(startTime, stopTime, sampleTime);
 
 % Satellite setting
@@ -31,7 +31,7 @@ sat = sats(sats.Name=="STARLINK-6101");
 
 % GS setting
 GSName = "U. of I.";
-minElevation = 50;
+minElevation = 45;
 % real location
 lat_1 = +40.11389690596162;
 lon_1 = -88.22484814695467;
@@ -62,12 +62,12 @@ F_c = 11.575e9;
 [az, el, ~] = aer(gs_1, sats);
 elevation = el';
 visible_num = sum(elevation>=minElevation, 2);
-visible_idx = elevation>minElevation;
+visible_idx = elevation>minElevation & az' > 300;
 
 [~, satV] = states(sats, "CoordinateFrame", "geographic");
 dir = zeros(3, size(el, 2), size(el, 1));
 dir(1, :, :) = (cosd(el).*cosd(az))';
-dir(2, :, :) = (cosd(el).*sind(az))';311
+dir(2, :, :) = (cosd(el).*sind(az))';
 dir(3, :, :) = (-sind(el))';
 doppler = -squeeze(dot(satV, dir, 1))*F_c/c;
 doppler(~visible_idx) = nan;

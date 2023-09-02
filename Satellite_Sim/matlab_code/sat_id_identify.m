@@ -14,8 +14,8 @@ end
 %% System parameters
 F_c = 11.575e9;
 % time setting
-startTime = datetime('now') + hours(5);     % UTC time
-% startTime = datetime(2023,8,28,16,39,1) + hours(5);     % UTC time
+% startTime = datetime('now') + hours(5);     % UTC time
+startTime = datetime(2023,8,28,16,39,1) + hours(5);     % UTC time
 duration = seconds(minutes(1));
 stopTime = startTime + seconds(duration);
 sampleTime = 1;                             % s
