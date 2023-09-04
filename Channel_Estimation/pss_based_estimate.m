@@ -1,8 +1,8 @@
-clear all; close all; clc;
+% clear all; close all; clc;
 addpath ../Tool_Functions/;
 
 % load file
-mon = 8; day = 29; hr = 16; minu = 41;
+mon = 9; day = 3; hr = 19; minu = 25;
 sample_rate = 2e6;
 center_freq = 11.575e9;
 IQ_Sample_file = get_file_name(mon, day, hr, minu, center_freq, sample_rate);

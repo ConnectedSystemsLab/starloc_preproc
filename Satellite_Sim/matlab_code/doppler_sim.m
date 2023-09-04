@@ -1,6 +1,6 @@
 % calculate the doppler frequency shift from tle file
 % Matlab satellite communication toolbox needed
-clear all; clc; close all;
+% clear all; clc; close all;
 tic;
 % TLE set up
 today_date = datetime("today");
@@ -27,11 +27,9 @@ sats = satellite(sc, TLE);
 numSatellites = length(sats);
 fprintf('load done, %d starlink satellites in total\n', numSatellites);
 
-sat = sats(sats.Name=="STARLINK-6101");
-
 % GS setting
 GSName = "U. of I.";
-minElevation = 45;
+minElevation = 60;
 % real location
 lat_1 = +40.11389690596162;
 lon_1 = -88.22484814695467;
@@ -47,9 +45,6 @@ gs_2 = groundStation(sc, "Name", GSName, "Latitude", lat_2, ...
 numHours = stopTime - startTime;
 numSamples = seconds(numHours) / sampleTime;
 numSamples = round(numSamples);
-% doppler = NaN(numSamples+1, numSatellites);
-% elevation = zeros(numSamples+1, numSatellites);
-% visible_num = zeros(numSamples+1, 1);
 
 c = physconst("Lightspeed");
 F_c = 11.575e9;
@@ -62,7 +57,7 @@ F_c = 11.575e9;
 [az, el, ~] = aer(gs_1, sats);
 elevation = el';
 visible_num = sum(elevation>=minElevation, 2);
-visible_idx = elevation>minElevation & az' > 300;
+visible_idx = elevation>minElevation;
 
 [~, satV] = states(sats, "CoordinateFrame", "geographic");
 dir = zeros(3, size(el, 2), size(el, 1));
@@ -84,7 +79,7 @@ hold on; grid on;
 xlabel('t/min');
 ylabel('visible satellite #');
 title("minElevation = " + num2str(minElevation) + " degrees");
-figure(5);
+figure(2);
 hold on; grid on;
 for idx = 1:numSatellites
     if ~isempty(find(~isnan(doppler(:, idx))))
@@ -95,17 +90,8 @@ legend;
 figure(3);
 hold on; grid on;
 for idx = 1:numSatellites
-    % if ~isempty(find(~isnan(doppler(:, idx))))
-    if sats(idx).Name == "STARLINK-6101"
-        plot(t(1:end-1), diff(doppler(:, idx)), 'DisplayName', sats(idx).Name);
-    end
-end
-legend;
-figure(4);
-hold on; grid on;
-for idx = 1:numSatellites
     if ~isempty(find(~isnan(doppler(:, idx))))
-        plot(t, sqrt(sum(satV(:,:,idx).^2,1)), 'DisplayName', sats(idx).Name);
+        plot(t(2:end), diff(doppler(:, idx)), 'DisplayName', sats(idx).Name);
     end
 end
 legend;

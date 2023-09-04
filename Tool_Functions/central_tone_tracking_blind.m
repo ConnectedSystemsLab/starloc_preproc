@@ -11,7 +11,7 @@ function [res, dopp_param, t] = central_tone_tracking_blind(...
 %   dopp_param = [k;b]
 % - t: time sequence
 
-f_hardware = -4150;
+f_hardware = 28952;
 
 % downsample & 1-st track
 central_bw = 1.024e6;
@@ -27,11 +27,9 @@ freq_bin = central_bw/n_fft;
 tone_spacing = round(44e3/freq_bin);
 
 idx = 1;
-% num_dopps = ceil((pss_begin_idx(end)-pss_begin_idx(1))/num_read_samples);
-% num_tones = 11;
-% tone_list = zeros(num_dopps, num_tones);
-tone_idx = 0;
-% tmp = [];
+% tone_idx = 0;
+thresh = 9;
+dopp_list = [];
 
 while 1
     sig = read_complex_binary2(IQ_Sample_file, num_read_samples, idx);
@@ -57,27 +55,33 @@ while 1
     
     % remove hardware peak
     sig_fft_abs(abs(f - f_hardware)<5*freq_bin) = mean(sig_fft_abs(0.1*length(sig_fft_abs):0.9*length(sig_fft_abs)));
-
-    t_now = idx/sample_rate;
     idx = idx+num_read_samples;
+    t_now = idx/sample_rate;
+    [spec_max, f_max] = max(sig_fft_abs);
+    if spec_max >= thresh
+        dopp_list = [dopp_list ; f_max];
+    else
+        dopp_list = [dopp_list ; NaN];
+    end
+    % if round(t_now) < 216
+    %     continue;
+    % end
+    if mod((idx-1)/num_read_samples, 50) ~= 0
+        continue;
+    end
     if if_visual
         % for visualize & debug
-        if round(t_now) < 65
-            continue;
-        end
+        subplot(2,1,1);
         plot(f, sig_fft_abs);
         xlim([f(1) f(end)]);
-        % ylim([0 .2]);
-        % ylim([0 100]);
-        title(round(idx/sample_rate));
-        ylim([0 15])
-        % xline(f_tone_begin);    
+        title("t="+num2str(round(t_now))+"s");
+        ylim([0 20]); yline(thresh);
+        subplot(2,1,2);
+        plot(linspace(0, t_now, length(dopp_list))', dopp_list, 'LineWidth', 1);
         pause(.01);
     end
 end
 
-% stft = spectrogram(tmp, hanning(n_fft), 0, n_fft, central_bw, 'centered');
-% mesh(abs(stft));
 
 end
 
