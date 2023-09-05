@@ -14,11 +14,11 @@ f = fopen(IQ_Sample_file, 'rb');
 %% frame detection
 % frame_idxs = frame_detect_pss(IQ_Sample_file, sample_rate);
 is_end = false;
-num_samples = 1024*1e3;
+num_samples = sample_rate*1;
 frame_idx = 0;
-n_fft = 1024;
+n_fft = 256;
 % sig_fft = zeros(n_fft, 1);
-freq = linspace(-bw/2, bw/2, n_fft);
+% freq = linspace(-bw/2, bw/2, n_fft);
 detect_threshold = -55;     % dB
 a = 0;
 while ~is_end
@@ -29,11 +29,9 @@ while ~is_end
         is_end = true;
         break;
     end
-    spectrogram(signal, hanning(1024), 500, 1024, sample_rate, 'centered');
+    [sig_fft, freq] = fft_avg(signal, bw, n_fft);
+    % spectrogram(signal, hanning(1024), 500, 1024, sample_rate, 'centered');
+    % sig_fft(abs(freq-25523.9)<1e3) = mean(sig_fft(abs(freq-24523.9)>1e3));
+    plot(freq, mag2db(sig_fft));
     pause(.1);
 end
-% for idx = 1:floor(length(sig_dsamp)/num_samples)
-%     signal = sig_dsamp((idx-1)*num_samples+1:idx*num_samples);
-%     spectrogram(signal, hanning(1024), 500, 1024, sample_rate, 'centered');
-%     pause(.1);
-% end

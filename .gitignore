@@ -1,10 +1,13 @@
 *.asv
 *.DS_Store
-./USRP_testing/ofdm_analysis
-./USRP_testing/spectrograms
+USRP_testing/ofdm_analysis
+USRP_testing/spectrograms
 *.csv
 *.php
 *.mat
 *.ipynb
 Satellite_Sim/matlab_code/Starlink.tle
 /bash_scripts/newf_iles
+Tool_Functions/get_file_name.m
+OFDM_LAB/
+resamp_test.m

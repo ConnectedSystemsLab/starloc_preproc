@@ -1,8 +1,41 @@
+<<<<<<< HEAD
 function [frame_begin_idx] = frame_detect_pss(file_path, sample_rate)
     % frame detection algorithm based on pss sequence & matched filter
     % input: the path of .dat file; sample_rate
     % output: the index of frames
     % note: only high sample rate will work (e.g., 100 MHz)
+=======
+function [frame_begin_idx] = frame_detect_pss(file_path, sample_rate, if_visual)
+% frame detection algorithm based on pss sequence & matched filter
+% input: the path of .dat file; sample_rate
+% output: the index of frames
+% note: only high sample rate will work (e.g., 100 MHz)
+
+fprintf("Detecting frames in %s\n", file_path);tic;
+addpath ../Tool_Functions/
+
+N = 1024+32;
+Fs = 240e6;
+t_read = 1e-2;
+num_samples = t_read*sample_rate;
+frame_begin_idx = [];
+f = fopen(file_path, 'rb');
+[pss, ~] = get_pss();
+pss_resamp = resample(pss, sample_rate, 240e6);
+
+% noise estimation (assumes data begins with noise)
+[noise, is_end] = fread_complex(f, num_samples);
+% matched filter based detection
+filter_kernal = conj(pss_resamp(end:-1:1));
+z = zeros(length(filter_kernal)-1, 1);
+
+read_idx = 1;           % # of read times
+% need to be adjusted
+threshold = 15*mean(abs(filter(filter_kernal, 1, noise)));
+
+while ~is_end
+    read_idx = read_idx+1;
+>>>>>>> refs/remotes/origin/main
     
     fprintf("Decting frames in %s\n", file_path);
     addpath ../Tool_Functions/
@@ -67,5 +100,26 @@ function [frame_begin_idx] = frame_detect_pss(file_path, sample_rate)
             yline(mag2dB(threshold))
             pause(.1);
         end
+<<<<<<< HEAD
     end
     end
+=======
+        idx_above_thresh = nonzeros(tmp) - ceil(sample_rate/Fs*N);
+        frame_begin_idx = [frame_begin_idx; ...
+            idx_above_thresh+(read_idx-1)*num_samples];
+        
+        if if_visual
+        % for visualize & debug
+            subplot(2, 1, 1);
+            plot(mag2db(abs(signal)));
+            xline(idx_above_thresh);
+            subplot(2, 1, 2);
+            plot(mag2dB(abs(res)));
+            yline(mag2dB(threshold))
+            pause(.1);
+        end
+    end
+end
+fprintf("Detect done in %d s, %d frames found in total\n", round(toc), length(frame_begin_idx));
+end
+>>>>>>> refs/remotes/origin/main
