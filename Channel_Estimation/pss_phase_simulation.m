@@ -6,7 +6,7 @@ setParam;
 [x, t_1] = getBasebandSig();
 
 %% doppler & channel
-dopp_rate = -1e3;
+dopp_rate = -2e3;
 dopp_init = -50e3;
 SNR = 12;
 y = x/4;              % attenuation

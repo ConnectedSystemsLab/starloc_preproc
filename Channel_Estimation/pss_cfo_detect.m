@@ -2,7 +2,7 @@ clear all; close all; clc;
 addpath ../Tool_Functions/;
 %%
 % load file
-mon = 8; day = 12; hr = 10; minu = 1;
+mon = 8; day = 12; hr = 10; minu = 7;
 sample_rate = 100e6;
 center_freq = 11.575e9;
 IQ_Sample_file = get_file_name(mon, day, hr, minu, center_freq, sample_rate);
@@ -34,7 +34,7 @@ for idx = 1:frame_num
     % resample the recieved signal to 240 MHz
     % if idx<2000
     %     continue;end
-    pss_recv = resample(pss_recv, 240, 100);
+    pss_recv = my_resample(pss_recv, 240, 100);
     % remove cp
     pss_recv = pss_recv(33:end);
     
