@@ -29,30 +29,68 @@ threshold = 15*mean(abs(filter(filter_kernal, 1, noise)));
 while ~is_end
     read_idx = read_idx+1;
     
-    [signal, is_end] = fread_complex(f, num_samples);
+    fprintf("Decting frames in %s\n", file_path);
+    addpath ../Tool_Functions/
     
-    [res, z] = filter(filter_kernal, 1, signal, z);
-    idx_above_thresh = abs(res) > threshold;
-    idx_above_thresh = find(idx_above_thresh);
-    tmp = idx_above_thresh;
-
-    if ~isempty(idx_above_thresh)
-        % eliminate adjacent results
-        for idx = 1:length(idx_above_thresh)
-            if tmp(idx) == 0
-                continue;
-            end
-            idx_1 = idx_above_thresh(idx);
-            idx_2_ = abs(idx_above_thresh-idx_1) <= 20*ceil(sample_rate/Fs*N);
-            idx_2 = idx_above_thresh(idx_2_);
-            [~, ii_] = max(abs(res(idx_2)));
-            idx_2_max = idx_2(ii_);
-            % jj = idx_2 ~= idx_2_max;
-            for mm = 1:length(idx_2)
-                if idx_2(mm) ~= idx_2_max
-                    tmp(tmp == idx_2(mm)) = 0;
+    N = 1024+32;
+    Fs = 240e6;
+    t_read = 1e-2;
+    num_samples = t_read*sample_rate;
+    frame_begin_idx = [];
+    f = fopen(file_path, 'rb');
+    [pss, ~] = get_pss();
+    pss_resamp = resample(pss, sample_rate, 240e6);
+    
+    % noise estimation (assumes data begins with noise)
+    [noise, is_end] = fread_complex(f, num_samples);
+    % matched filter based detection
+    filter_kernal = conj(pss_resamp(end:-1:1));
+    z = zeros(length(filter_kernal)-1, 1);
+    
+    read_idx = 1;           % # of read times
+    % need to be adjusted
+    threshold = 15*mean(abs(filter(filter_kernal, 1, noise)));
+    
+    while ~is_end
+        read_idx = read_idx+1;
+        
+        [signal, is_end] = fread_complex(f, num_samples);
+        
+        [res, z] = filter(filter_kernal, 1, signal, z);
+        idx_above_thresh = abs(res) > threshold;
+        idx_above_thresh = find(idx_above_thresh);
+        tmp = idx_above_thresh;
+    
+        if ~isempty(idx_above_thresh)
+            % eliminate adjacent results
+            for idx = 1:length(idx_above_thresh)
+                if tmp(idx) == 0
+                    continue;
+                end
+                idx_1 = idx_above_thresh(idx);
+                idx_2_ = abs(idx_above_thresh-idx_1) <= 20*ceil(sample_rate/Fs*N);
+                idx_2 = idx_above_thresh(idx_2_);
+                [~, ii_] = max(abs(res(idx_2)));
+                idx_2_max = idx_2(ii_);
+                % jj = idx_2 ~= idx_2_max;
+                for mm = 1:length(idx_2)
+                    if idx_2(mm) ~= idx_2_max
+                        tmp(tmp == idx_2(mm)) = 0;
+                    end
                 end
             end
+            idx_above_thresh = nonzeros(tmp) - ceil(sample_rate/Fs*N);
+            frame_begin_idx = [frame_begin_idx; ...
+                idx_above_thresh+(read_idx-1)*num_samples];
+            
+            % for visualize & debug
+            subplot(2, 1, 1);
+            plot(mag2db(abs(signal)));
+            xline(idx_above_thresh);
+            subplot(2, 1, 2);
+            plot(mag2dB(abs(res)));
+            yline(mag2dB(threshold))
+            pause(.1);
         end
         idx_above_thresh = nonzeros(tmp) - ceil(sample_rate/Fs*N);
         frame_begin_idx = [frame_begin_idx; ...
