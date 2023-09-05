@@ -92,10 +92,6 @@ while ~is_end
             yline(mag2dB(threshold))
             pause(.1);
         end
-<<<<<<< HEAD
-    end
-    end
-=======
         idx_above_thresh = nonzeros(tmp) - ceil(sample_rate/Fs*N);
         frame_begin_idx = [frame_begin_idx; ...
             idx_above_thresh+(read_idx-1)*num_samples];
@@ -114,4 +110,3 @@ while ~is_end
 end
 fprintf("Detect done in %d s, %d frames found in total\n", round(toc), length(frame_begin_idx));
 end
->>>>>>> refs/remotes/origin/main
