@@ -42,12 +42,13 @@ sss_resamp = resample(sss, sample_rate, 240e6);
 figure;
 sss_idx_arr = [];
 H_arr = [];
-
+dopp_over_frames = [];
 for idx = 2000:3000
     recv = read_complex_binary2(IQ_Sample_file, N_f, pss_begin_idx(idx));
     n = [pss_begin_idx(idx)-pss_begin_idx(1):pss_begin_idx(idx)-pss_begin_idx(1)+length(recv)-1]'./sample_rate;
     % correct signal for doppler shift 
     doppler_arr = dopp_param(1)*n+dopp_param(2);
+    dopp_over_frames = [dopp_over_frames;doppler_arr];
     doppler_corrected_recv = recv.*exp(-1i*2*pi*doppler_arr.*n); % -1i or +1i? 
     [c,lags] = xcorr(doppler_corrected_recv, sss_resamp);
     [max_xcorr, sss_idx] = max(abs(c));
