@@ -11,7 +11,7 @@ function [res, dopp_param, t] = central_tone_tracking_blind(...
 %   dopp_param = [k;b]
 % - t: time sequence
 
-f_hardware = 28952;
+f_hardware = -4050;
 
 % downsample & 1-st track
 central_bw = 1.024e6;
@@ -28,7 +28,7 @@ tone_spacing = round(44e3/freq_bin);
 
 idx = 1;
 % tone_idx = 0;
-thresh = 9;
+thresh = 7;
 dopp_list = [];
 
 while 1
@@ -57,9 +57,9 @@ while 1
     sig_fft_abs(abs(f - f_hardware)<5*freq_bin) = mean(sig_fft_abs(0.1*length(sig_fft_abs):0.9*length(sig_fft_abs)));
     idx = idx+num_read_samples;
     t_now = idx/sample_rate;
-    [spec_max, f_max] = max(sig_fft_abs);
+    [spec_max, f_max_idx] = max(sig_fft_abs);
     if spec_max >= thresh
-        dopp_list = [dopp_list ; f_max];
+        dopp_list = [dopp_list ; f(f_max_idx)];
     else
         dopp_list = [dopp_list ; NaN];
     end
