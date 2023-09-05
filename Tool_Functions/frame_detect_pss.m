@@ -1,10 +1,3 @@
-<<<<<<< HEAD
-function [frame_begin_idx] = frame_detect_pss(file_path, sample_rate)
-    % frame detection algorithm based on pss sequence & matched filter
-    % input: the path of .dat file; sample_rate
-    % output: the index of frames
-    % note: only high sample rate will work (e.g., 100 MHz)
-=======
 function [frame_begin_idx] = frame_detect_pss(file_path, sample_rate, if_visual)
 % frame detection algorithm based on pss sequence & matched filter
 % input: the path of .dat file; sample_rate
@@ -35,7 +28,6 @@ threshold = 15*mean(abs(filter(filter_kernal, 1, noise)));
 
 while ~is_end
     read_idx = read_idx+1;
->>>>>>> refs/remotes/origin/main
     
     fprintf("Decting frames in %s\n", file_path);
     addpath ../Tool_Functions/
