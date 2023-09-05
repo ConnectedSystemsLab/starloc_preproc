@@ -1,0 +1,27 @@
+tic;
+% TLE set up
+today_date = datetime("today");
+mon = today_date.Month; day = today_date.Day;
+TLE = "tles/"+num2str(mon)+"_"+num2str(day)+"/Starlink.tle";
+if ~exist("tles/"+num2str(mon)+"_"+num2str(day))
+    mkdir("tles/"+num2str(mon)+"_"+num2str(day));
+    URL = "https://celestrak.org/NORAD/elements/supplemental/" + ...
+    "sup-gp.php?FILE=starlink&FORMAT=tle";
+    urlwrite(URL, TLE);
+end
+sats = satellite(sc, TLE);
+numSats = length(sats);
+G = 6.6743e-11;
+M = 5.9722e24;
+r_E = 6378e3;
+
+%% 
+[inclination, h] = deal(zeros(numSats, 1));
+for idx = 1:numSats
+    sat = sats(idx);
+    orbit_ele = orbitalElements(sat);
+    T = orbit_ele.Period;
+    inclination(idx) = orbit_ele.Inclination;
+    h(idx) = (T^2/4/pi^2*G*M)^(1/3)-r_E;
+end
+subplot(2,1,1);plot(inclination);subplot(2,1,2);plot(h);
