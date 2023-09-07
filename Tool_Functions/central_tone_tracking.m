@@ -11,7 +11,7 @@ function [res, dopp_param, t] = central_tone_tracking(...
 %   dopp_param = [k;b]
 % - t: time sequence
 
-f_hardware = 145642;
+f_hardware = -4550;
 
 % downsample & 1-st track
 T_f = 1/750;

@@ -11,7 +11,7 @@ function [res, dopp_param, t] = central_tone_tracking_blind(...
 %   dopp_param = [k;b]
 % - t: time sequence
 
-f_hardware = -4050;
+f_hardware = -4550;
 
 % downsample & 1-st track
 central_bw = 1.024e6;
@@ -28,14 +28,21 @@ tone_spacing = round(44e3/freq_bin);
 
 idx = 1;
 % tone_idx = 0;
-thresh = 7;
+thresh = 3.5;
 dopp_list = [];
 
+t_1 = 360;
 while 1
     sig = read_complex_binary2(IQ_Sample_file, num_read_samples, idx);
     if length(sig) ~= num_read_samples
         fprintf('file end\n');
         break;
+    end
+    idx = idx+num_read_samples;
+    t_now = idx/sample_rate;
+    if t_now<360
+        dopp_list = [dopp_list ; NaN];
+        continue;
     end
     % tmp = [tmp; resample(sig, 1e6, sample_rate)];
     % sig = sig.*exp(j*2*pi*F_spacing/2*[0:num_read_samples-1]'/sample_rate);
@@ -55,9 +62,9 @@ while 1
     
     % remove hardware peak
     sig_fft_abs(abs(f - f_hardware)<5*freq_bin) = mean(sig_fft_abs(0.1*length(sig_fft_abs):0.9*length(sig_fft_abs)));
-    idx = idx+num_read_samples;
-    t_now = idx/sample_rate;
-    [spec_max, f_max_idx] = max(sig_fft_abs);
+    
+    [spec_max, f_max_idx] = findpeaks(sig_fft_abs,"NPeaks",9,"MinPeakDistance",22e3/freq_bin);
+    % [spec_max, f_max_idx] = max(sig_fft_abs);
     if spec_max >= thresh
         dopp_list = [dopp_list ; f(f_max_idx)];
     else
@@ -75,7 +82,7 @@ while 1
         plot(f, sig_fft_abs);
         xlim([f(1) f(end)]);
         title("t="+num2str(round(t_now))+"s");
-        ylim([0 20]); yline(thresh);
+        ylim([0 14]); yline(thresh);
         subplot(2,1,2);
         plot(linspace(0, t_now, length(dopp_list))', dopp_list, 'LineWidth', 1);
         pause(.01);

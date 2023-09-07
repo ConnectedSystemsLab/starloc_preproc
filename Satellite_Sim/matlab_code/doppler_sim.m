@@ -15,9 +15,8 @@ end
 
 %% System parameters
 % time setting
-% startTime = datetime('now') + hours(5);     % UTC time
-startTime = datetime(2023,8,29,13,27,1) + hours(5);     % UTC time
-duration = seconds(minutes(2));
+startTime = datetime(2023,8,29,16,47,1) + hours(5);     % UTC time
+duration = seconds(minutes(5));
 stopTime = startTime + seconds(duration);
 sampleTime = 1;                             % s
 sc = satelliteScenario(startTime, stopTime, sampleTime);
@@ -29,17 +28,12 @@ fprintf('load done, %d starlink satellites in total\n', numSatellites);
 
 % GS setting
 GSName = "U. of I.";
-minElevation = 60;
+minElevation = 55;
 % real location
-lat_1 = +40.11389690596162;
-lon_1 = -88.22484814695467;
-gs_1 = groundStation(sc, "Name", GSName, "Latitude", lat_1, ...
-    "Longitude", lon_1, "MinElevationAngle", minElevation);
-% assumed location
-lat_2 = +40.61389690596162;
-lon_2 = -88.72484814695467;
-gs_2 = groundStation(sc, "Name", GSName, "Latitude", lat_2, ...
-    "Longitude", lon_2, "MinElevationAngle", minElevation);
+lat = +40.11389690596162;
+lon = -88.22484814695467;
+gs = groundStation(sc, "Name", GSName, "Latitude", lat, ...
+    "Longitude", lon, "MinElevationAngle", minElevation);
 
 % res init
 numHours = stopTime - startTime;
@@ -54,7 +48,7 @@ F_c = 11.575e9;
 % doppler = dopplershift(gs, sats, Frequency=F_c)';
 
 % [az, el, ~] = aer(sats, gs);
-[az, el, ~] = aer(gs_1, sats);
+[az, el, ~] = aer(gs, sats);
 elevation = el';
 visible_num = sum(elevation>=minElevation, 2);
 visible_idx = elevation>minElevation;
@@ -67,6 +61,7 @@ dir(3, :, :) = (-sind(el))';
 doppler = -squeeze(dot(satV, dir, 1))*F_c/c;
 doppler(~visible_idx) = nan;
 
+% doppler = dopplershift(sats, gs, Frequency=F_c);
 fprintf('simulation done, %d mins used\n', round(toc/60));
 
 %% figs

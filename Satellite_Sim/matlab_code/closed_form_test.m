@@ -33,6 +33,7 @@ sat_coordinate = states(sat);
 % r_vec = sat_coordinate - repmat(gs_coordinate, [1 numSamp]);
 r_ = sqrt(sum(sat_coordinate.^2, 1));
 h = mean(r_-r_E);
+h = h - 100e3;
 r = mean(r_);
 [az, el, ~] = aer(gs, sat);
 [el_max, t_0] = max(el);
