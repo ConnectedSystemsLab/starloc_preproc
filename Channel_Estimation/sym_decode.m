@@ -2,13 +2,14 @@ clear all; close all; clc;
 addpath ../Tool_Functions/;
 
 % load file
-mon = 8; day = 31; hr = 13; minu = 27;
+mon = 9; day = 8; hr = 12; minu = 5;
 sample_rate = 100e6;
 center_freq = 11.575e9;
 IQ_Sample_file = get_file_name(mon, day, hr, minu, center_freq, sample_rate);
 
 %% pss detect
-[pss_begin_idx] = frame_detect_pss(IQ_Sample_file, sample_rate, 0);
+% [pss_begin_idx] = frame_detect_pss(IQ_Sample_file, sample_rate, 1);
+load pss_begin_idx.mat;
 T_f = 1/750;
 N_f = T_f*sample_rate;
 frame_num = length(pss_begin_idx);
@@ -27,10 +28,11 @@ SSS_resamp = SSS;
 % 1:214 & 812:1024
 SSS_resamp(215:811) = 0;
 for idx = 1:frame_num
-    if idx < 1100
+    if idx < 457
         continue;
     end
     recv = read_complex_binary2(IQ_Sample_file, N_f, pss_begin_idx(idx));
+    recv = recv.*exp(j*2*pi*(-85e3+2e3)*[0:N_f-1]'/100e6);
     t_f = (pss_begin_idx(idx)-pss_begin_idx(1))/sample_rate;
     % f_d = dopp_param(1)*t_f+dopp_param(2);
     % dopp = exp(j*2*pi*f_d*[0:N_f-1]'/sample_rate);
@@ -40,15 +42,17 @@ for idx = 1:frame_num
     sss_upsamp = my_resample(sss_recv, 240e6, sample_rate);
     sss_upsamp = sss_upsamp(33:end);    % remove cp
     H = fft(sss_upsamp)./SSS;
+    H([1 2 1023 1024])=0;
+    plot(abs(ifft(H)));
     for idx_f = 3:302
         recv_frame = recv(1+440*(idx_f-1):440*idx_f);
         frame_upsamp = my_resample(recv_frame, 240e6, sample_rate);
         frame_upsamp = frame_upsamp(33:end);
         symbols = fft(frame_upsamp)./H;
         % scatterplot([symbols(1:214);symbols(812:end)]);
-        scatter(real([symbols(1:214);symbols(812:end)]), imag([symbols(1:214);symbols(812:end)]));
+        scatter(real([symbols(1:200);symbols(850:end)]), imag([symbols(1:200);symbols(850:end)]));
         % hold on;
-        xlim([-5 5]); ylim([-5 5]);
+        xlim([-2.5 2.5]); ylim([-2.5 2.5]);
         pause(.1);
     end
     % H = fft(a2(10:436))./SSS_resamp;

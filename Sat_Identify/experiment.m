@@ -29,10 +29,15 @@ plot(t, dopp_recover);
 % System parameters
 % time setting
 tic;
+<<<<<<< HEAD
 startTime = datetime(2023,8,29,16,41+7,17+3) + hours(5);     % UTC time
 duration = seconds(minutes(3));
+=======
+startTime = datetime(2023,8,29,16,46,57) + hours(5);     % UTC time
+duration = seconds(minutes(15));
+>>>>>>> refs/remotes/origin/main
 stopTime = startTime + seconds(duration);
-sampleTime = 5;                             % s
+sampleTime = 1;                             % s
 sc = satelliteScenario(startTime, stopTime, sampleTime);
 TLE = "tles/"+num2str(8)+"_"+num2str(29)+"/Starlink.tle";
 % Satellite setting
@@ -42,7 +47,7 @@ fprintf('load done, %d starlink satellites in total\n', numSatellites);
 
 % GS setting
 GSName = "U. of I.";
-minElevation = 40;
+minElevation = 25;
 % real location
 lat = +40.11389690596162;
 lon = -88.22484814695467;
@@ -76,7 +81,7 @@ fprintf('simulation done, %d mins used\n', round(toc/60));
 
 %% figs
 t_ = [0:sampleTime:duration]';
-% figure(2);
+figure(1);
 hold on; grid on;
 for idx = 1:numSatellites
     if ~isempty(find(~isnan(doppler(:, idx))))
@@ -86,17 +91,21 @@ for idx = 1:numSatellites
         sat = sats(idx);
         param = orbitalElements(sat);
         [az, el, ~] = aer(gs, sat);
-        if max(el) < 55 || max(el) > 80
-            continue;
-        end
+        % if max(el) < 45 || max(el) > 65
+        %     continue;
+        % end
         % if abs(param.Inclination-53) >2
         %     continue;
         % end
 
-        plot(t_(1:end), doppler(:, idx)+orb_param(end)-117.2e3, 'DisplayName', sats(idx).Name);
+        plot(t_(2:end), diff(doppler(:, idx)), 'DisplayName', sats(idx).Name, 'LineStyle', '--');
     end
 end
 legend;
 
-% plot(t, dopp_exp_2);
-plot([0:195], downsample( dopp_recover, 10), LineWidth=1);
+%%
+for ii = 1:1000
+    tmp = plot([NaN(ii, 1) ; diff(my_mean(dopp_recover,1))], LineWidth=1, Color=[0 0 1]);
+    pause(.3)
+    delete(tmp);
+end

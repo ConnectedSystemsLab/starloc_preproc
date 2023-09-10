@@ -6,11 +6,13 @@ setParam;
 [x, t_1] = getBasebandSig();
 
 %% doppler & channel
-dopp_rate = -1e3;
-dopp_init = -50e3;
-SNR = 123;
+dopp_rate = 0e3;
+dopp_init = 100e3;
+SNR = 124;
 y = x/4;              % attenuation
-y = y.*exp(j*2*pi*(dopp_rate*t_1+dopp_init).*t_1);
+dop = chirp(t_1, dopp_init, t_1(end), dopp_rate*t_1(end)+dopp_init, "complex");
+% y = y.*exp(j*2*pi*(dopp_rate*t_1+dopp_init).*t_1);
+y = y.*dop;
 y = awgn(y, SNR);
 y = y/10;
 
@@ -48,8 +50,9 @@ for idx = 1:frame_num
         recv_frame = recv(1+440*(idx_f-1):440*idx_f);
         frame_upsamp = my_resample(recv_frame, 240e6, 100e6);
         frame_upsamp = frame_upsamp(33:end);
-        symbols = fft(frame_upsamp)./H;
+        symbols = fft(frame_upsamp);
         % scatterplot([symbols(1:214);symbols(812:end)]);
-        scatter(real([symbols(1:214);symbols(812:end)]), imag([symbols(1:214);symbols(812:end)]));
+        scatter(real([symbols(1:200);symbols(840:end)]), imag([symbols(1:200);symbols(840:end)]));
+        xlim([-1.2 1.2]); ylim([-1.2 1.2]);
     end
 end

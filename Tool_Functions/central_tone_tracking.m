@@ -19,7 +19,7 @@ central_bw = 1.024e6;
 F_spacing = 234375;
 T_avg = 1;
 
-n_fft = 1024;
+n_fft = 10240;
 t_fft = n_fft/central_bw;
 % num_read_samples = t_fft*sample_rate;
 num_read_samples = T_avg*sample_rate;
@@ -42,11 +42,13 @@ while idx <= pss_begin_idx(end)
     end
     % tmp = [tmp; resample(sig, 1e6, sample_rate)];
     % sig = sig.*exp(j*2*pi*F_spacing/2*[0:num_read_samples-1]'/sample_rate);
-    sig = resample(sig, central_bw, sample_rate);
+    % sig = resample(sig, central_bw, sample_rate);
     [sig_fft_abs, f] = fft_avg(sig, central_bw, n_fft, f_hardware);
-    % sig_fft = fftshift(fft(sig, n_fft))/n_fft;
+
+    % sig_fft = fftshift(fft(sig));
     % sig_fft_abs = abs(sig_fft);
-    f = linspace(-central_bw/2, central_bw/2, n_fft)';
+    % f = linspace(-sample_rate/2, sample_rate/2, num_read_samples)';
+    % f = linspace(-central_bw/2, central_bw/2, n_fft)';
     
     % remove hardware peak
     sig_fft_abs(abs(f-300)<12*freq_bin) = mean(sig_fft_abs);
@@ -82,10 +84,10 @@ while idx <= pss_begin_idx(end)
         plot(f, sig_fft_abs);
         xlim([f(1) f(end)]);
         title(round(t_now));
-        ylim([0 10])
+        % ylim([40 200])
         % plot(f(locs), pks, 'r*');
         % xline(f_tone_begin);    
-        pause(.1);
+        pause(.4);
     end
 end
 if if_visual
