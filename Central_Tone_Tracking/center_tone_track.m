@@ -1,0 +1,115 @@
+%%
+clear all; close all; clc;
+addpath ../Tool_Functions/;
+setParam;
+
+%% load filename
+mon = 8; day = 29; hr = 16; minu = 41;
+sample_rate = 2e6;
+center_freq = 11.575e9;
+IQ_Sample_file = get_file_name(mon, day, hr, minu, center_freq, sample_rate);
+%%
+f_hardware = 145642; % not needed
+central_bw = 1.024e6;
+T_avg = 1;
+n_fft = 2^10;
+t_fft = n_fft/central_bw;
+num_read_samples = T_avg*sample_rate; %t_fft*sample_rate;
+
+idx = 1;
+figure;
+time = num_read_samples/sample_rate;
+move_by = num_read_samples/2;
+time_array = [];
+peak_array = [];
+while 1
+    sig = read_complex_binary2(IQ_Sample_file, num_read_samples, idx);
+    if length(sig) ~= num_read_samples
+        fprintf("breaking")
+        break;
+    end
+    
+    sig = resample(sig, central_bw, sample_rate);
+    [sig_fft_abs, f] = fft_avg(sig, central_bw, n_fft, f_hardware);
+    [max, midx] = maxk(sig_fft_abs, 20); % find 10 peaks - 9 tones and 1 constant hardware induced
+    mean_sig_amp = mean(sig_fft_abs);
+    peaks = [];
+    peaks_idx = [];
+    for i=1:1:length(max)
+        if max(i) > mean(sig_fft_abs)+1.5*std(sig_fft_abs) 
+            if i>1 && any((abs(midx(i)-midx(1:i-1)) < 5))
+                continue
+            end
+            peaks = [peaks max(i)];
+            peaks_idx = [peaks_idx midx(i)];
+        end
+    end
+    peak_subarray = zeros(1, n_fft);
+    peak_subarray(peaks_idx) = peaks;
+    time_array = [time_array; time];
+    peak_array = [peak_array; peak_subarray];
+    
+%     alpha = 2.5;
+%     opts = {'Window', gausswin(n_fft,alpha), 'FFTLength', n_fft};
+%     stft(sig, sample_rate, opts{:});
+%     plot((abs(fftshift(fft(sig)./sqrt(num_read_samples)))));
+%     ylim([0,0.05]);
+
+    scatter(peaks_idx, peaks, 'filled');
+%     xlim([0,length(sig_fft_abs)])
+%     hold on;
+%     plot(sig_fft_abs);
+%     ylim([0,20])
+%     title(join([num2str(time), " ",num2str(peak2rms(sig_fft_abs))]));
+%     pause(0.2);
+%     clf;
+    idx = idx+move_by;
+    time = time+move_by/sample_rate;
+
+end
+%%
+figure;
+for i = 1:1:length(time_array)
+    peak_idxes = find(peak_array(i,:));
+    peak_idxes = peak_idxes(peak_idxes~=509);
+    scatter(time_array(i)*ones(1,length(peak_idxes)), peak_idxes, 'blue', 'filled');
+    hold on;
+end
+%% point-to-curve assignment plot (run python script to get output)
+load('output_tracks.mat')
+fieldNames = fieldnames(tracks_dict);
+for i=1:1:length(fieldNames)
+arr = tracks_dict.(fieldNames{i});
+scatter(arr(:,1), arr(:,2), 'filled')
+hold on;
+end
+
+%%
+% f_hardware = 145642; % not needed
+% T_avg = 1;
+% central_bw = 1.024e6;
+% n_fft = 1024;
+% t_fft = n_fft/central_bw;
+% num_read_samples = t_fft*sample_rate;
+% % num_read_samples = T_avg*sample_rate;
+% ​
+% idx = 1;
+% figure;
+% while idx <= pss_begin_idx(end)
+%     sig = read_complex_binary2(IQ_Sample_file, num_read_samples, idx);
+%     if length(sig) ~= num_read_samples
+%         fprintf("breaking")
+%         break;
+%     end
+%     
+%     sig = resample(sig, central_bw, sample_rate);
+%     [sig_fft_abs, f] = fft_avg(sig, central_bw, n_fft, f_hardware);
+%     % sig_fft = fftshift(fft(sig, n_fft))/n_fft;
+%     % sig_fft_abs = abs(sig_fft);
+%     f = linspace(-central_bw/2, central_bw/2, n_fft)';
+%     plot(mag2db(sig_fft_abs));
+%     % xlim([6e4,7.5e4]);
+%     % ylim([0,100]);
+%     pause(0.1);
+%     
+% end
