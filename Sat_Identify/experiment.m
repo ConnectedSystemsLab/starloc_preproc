@@ -29,8 +29,8 @@ plot(t, dopp_recover);
 % System parameters
 % time setting
 tic;
-startTime = datetime(2023,8,29,16,41,17) + hours(5);     % UTC time
-duration = seconds(minutes(11));
+startTime = datetime(2023,8,29,16,41+7,17+3) + hours(5);     % UTC time
+duration = seconds(minutes(3));
 stopTime = startTime + seconds(duration);
 sampleTime = 5;                             % s
 sc = satelliteScenario(startTime, stopTime, sampleTime);
@@ -56,7 +56,7 @@ numSamples = round(numSamples);
 
 c = physconst("Lightspeed");
 F_c = 11.575e9;
-
+%%
 % [az, el, ~] = aer(sats, gs);
 [az, el, ~] = aer(gs, sats);
 elevation = el';
