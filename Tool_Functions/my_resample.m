@@ -1,6 +1,7 @@
 function [y] = my_resample(x, fs2, fs1)
 % converts the vector x with sample rate fs1
 % to the vector y with sample rate fs2
+% using time domain interpolation
 
 l = floor(fs2/fs1*length(x));
 y = zeros(l, 1);
