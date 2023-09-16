@@ -24,13 +24,19 @@ z = zeros(length(filter_kernal)-1, 1);
 
 read_idx = 1;           % # of read times
 % need to be adjusted
-threshold = 15*2*mean(abs(filter(filter_kernal, 1, noise)));
+threshold = 15*4*mean(abs(filter(filter_kernal, 1, noise)));
 
 while ~is_end
     read_idx = read_idx+1;
-    
-    [signal, is_end] = fread_complex(f, num_samples);
-    
+
+    [signal, is_end] = fread_complex(f, num_samples);    
+    % if (read_idx-1)*num_samples<5.893468949000000e+09
+    %     continue;
+    % end
+    if length(signal) ~= num_samples
+        break;
+    end
+    % signal = signal.*exp(j*2*pi*(-85e3+2e3)*[0:num_samples-1]'/100e6);
     [res, z] = filter(filter_kernal, 1, signal, z);
     idx_above_thresh = abs(res) > threshold;
     idx_above_thresh = find(idx_above_thresh);

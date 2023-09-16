@@ -73,9 +73,9 @@ while 1
     % if round(t_now) < 216
     %     continue;
     % end
-    if mod((idx-1)/num_read_samples, 50) ~= 0
-        continue;
-    end
+    % if mod((idx-1)/num_read_samples, 50) ~= 0
+    %     continue;
+    % end
     if if_visual
         % for visualize & debug
         subplot(2,1,1);
