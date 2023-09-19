@@ -2,8 +2,8 @@
 addpath ../Tool_Functions/;
 
 % load file
-mon = 9; day = 8; hr = 12; minu = 5;
-sample_rate = 100e6;
+mon = 9; day = 14; hr = 11; minu = 6;
+sample_rate = 2e6;
 center_freq = 11.575e9;
 IQ_Sample_file = get_file_name(mon, day, hr, minu, center_freq, sample_rate);
 

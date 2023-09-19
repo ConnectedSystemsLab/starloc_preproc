@@ -19,11 +19,20 @@ for idx = 1:1952
 end
 F_c = 11.575e9;
 t = [0:length(dopp_exp_2)-1]'*0.1;
+<<<<<<< HEAD
 figure(1); scatter(t, dopp_exp_2)
 %%
 % load('track_5_coords.mat')
 dopp_exp_2 = all_freq_track_points;
 t = [0:length(dopp_exp_2)-1]'*0.5;
+=======
+figure(1); plot(t, dopp_exp_2)
+%%
+load("track_5_coords.mat");
+% f_list = 0:2e6/1024:1023*2e6/1024;
+dopp_exp_2 = (2e6/1024)*track_5_coords(:,2);
+t = [0:length(dopp_exp_2)-1]'*0.1;
+>>>>>>> refs/remotes/origin/main
 F_c = 11.575e9;
 %% parameter search
 [dopp_recover, orb_param] = orbit_estimate(t, dopp_exp_2, F_c);
@@ -34,6 +43,7 @@ plot(t, dopp_recover);
 % System parameters
 % time setting
 tic;
+<<<<<<< HEAD
 % <<<<<<< HEAD
 startTime = datetime(2023,8,29,16,41+7,17+3) + hours(5);     % UTC time
 duration = seconds(minutes(3));
@@ -41,10 +51,16 @@ duration = seconds(minutes(3));
 % startTime = datetime(2023,8,29,16,46,57) + hours(5);     % UTC time
 % duration = seconds(minutes(15));
 % >>>>>>> refs/remotes/origin/main
+=======
+
+startTime = datetime(2023,8,29,16,41+7,17+3) + hours(5);     % UTC time
+duration = seconds(minutes(3));
+
+>>>>>>> refs/remotes/origin/main
 stopTime = startTime + seconds(duration);
-sampleTime = 1;                             % s
+sampleTime = 0.5;                             % s
 sc = satelliteScenario(startTime, stopTime, sampleTime);
-TLE = "tles/"+num2str(8)+"_"+num2str(29)+"/Starlink.tle";
+TLE = "tles/"+num2str(9)+"_"+num2str(14)+"/Starlink.tle";
 % Satellite setting
 sats = satellite(sc, TLE);
 numSatellites = length(sats);
@@ -52,7 +68,7 @@ fprintf('load done, %d starlink satellites in total\n', numSatellites);
 
 % GS setting
 GSName = "U. of I.";
-minElevation = 25;
+minElevation = 60;
 % real location
 lat = +40.11389690596162;
 lon = -88.22484814695467;
