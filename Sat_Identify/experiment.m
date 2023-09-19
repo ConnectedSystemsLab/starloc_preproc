@@ -2,6 +2,7 @@
 
 %% load empirical data
 load dopp_exp.mat;
+% load('track_5_coords.mat')
 dopp_exp_2 = NaN(1952, 1);
 for idx = 1:1952
     win = dopp_exp((idx-1)*10+1:idx*10);
@@ -18,8 +19,12 @@ for idx = 1:1952
 end
 F_c = 11.575e9;
 t = [0:length(dopp_exp_2)-1]'*0.1;
-figure(1); plot(t, dopp_exp_2)
-
+figure(1); scatter(t, dopp_exp_2)
+%%
+% load('track_5_coords.mat')
+dopp_exp_2 = all_freq_track_points;
+t = [0:length(dopp_exp_2)-1]'*0.5;
+F_c = 11.575e9;
 %% parameter search
 [dopp_recover, orb_param] = orbit_estimate(t, dopp_exp_2, F_c);
 hold on;
@@ -29,13 +34,13 @@ plot(t, dopp_recover);
 % System parameters
 % time setting
 tic;
-<<<<<<< HEAD
+% <<<<<<< HEAD
 startTime = datetime(2023,8,29,16,41+7,17+3) + hours(5);     % UTC time
 duration = seconds(minutes(3));
-=======
-startTime = datetime(2023,8,29,16,46,57) + hours(5);     % UTC time
-duration = seconds(minutes(15));
->>>>>>> refs/remotes/origin/main
+% =======
+% startTime = datetime(2023,8,29,16,46,57) + hours(5);     % UTC time
+% duration = seconds(minutes(15));
+% >>>>>>> refs/remotes/origin/main
 stopTime = startTime + seconds(duration);
 sampleTime = 1;                             % s
 sc = satelliteScenario(startTime, stopTime, sampleTime);
