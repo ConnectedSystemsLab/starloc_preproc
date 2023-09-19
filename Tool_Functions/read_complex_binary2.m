@@ -48,8 +48,12 @@ function v = read_complex_binary2(filename, count, start)
     s = fseek(f,4*2*start,-1);
     t = fread (f, [2, count], 'float');
     fclose (f);
-    v = t(1,:) + t(2,:)*i;
-    [r, c] = size (v);
-    v = reshape (v, c, r);
+    if s == 0
+        v = t(1,:) + t(2,:)*i;
+        [r, c] = size (v);
+        v = reshape (v, c, r);
+    else
+        v = -1;
+    end
   end
 end
