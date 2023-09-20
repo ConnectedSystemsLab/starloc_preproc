@@ -18,7 +18,7 @@ all_checked_time="Nan"
 sample_rate=100000000
 center_freq=11575000000
 if_visual=0
-time_capture=120
+time_capture=180
 # matlab_code=""
 # Set the duration. When no new file is entered in the directory for this duration, the program ends. 
 duration=120
