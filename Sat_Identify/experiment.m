@@ -19,21 +19,19 @@ for idx = 1:1952
 end
 F_c = 11.575e9;
 t = [0:length(dopp_exp_2)-1]'*0.1;
-<<<<<<< HEAD
 figure(1); scatter(t, dopp_exp_2)
 %%
 % load('track_5_coords.mat')
 dopp_exp_2 = all_freq_track_points;
 t = [0:length(dopp_exp_2)-1]'*0.5;
-=======
-figure(1); plot(t, dopp_exp_2)
-%%
-load("track_5_coords.mat");
-% f_list = 0:2e6/1024:1023*2e6/1024;
-dopp_exp_2 = (2e6/1024)*track_5_coords(:,2);
-t = [0:length(dopp_exp_2)-1]'*0.1;
->>>>>>> refs/remotes/origin/main
+figure(1); plot(t, dopp_exp_2);
 F_c = 11.575e9;
+%%
+% load("track_5_coords.mat");
+% % f_list = 0:2e6/1024:1023*2e6/1024;
+% dopp_exp_2 = (2e6/1024)*track_5_coords(:,2);
+% t = [0:length(dopp_exp_2)-1]'*0.1;
+% F_c = 11.575e9;
 %% parameter search
 [dopp_recover, orb_param] = orbit_estimate(t, dopp_exp_2, F_c);
 hold on;
@@ -43,20 +41,17 @@ plot(t, dopp_recover);
 % System parameters
 % time setting
 tic;
-<<<<<<< HEAD
-% <<<<<<< HEAD
-startTime = datetime(2023,8,29,16,41+7,17+3) + hours(5);     % UTC time
-duration = seconds(minutes(3));
-% =======
-% startTime = datetime(2023,8,29,16,46,57) + hours(5);     % UTC time
-% duration = seconds(minutes(15));
-% >>>>>>> refs/remotes/origin/main
-=======
 
-startTime = datetime(2023,8,29,16,41+7,17+3) + hours(5);     % UTC time
+startTime = datetime(2023,9,14,11,20,5) + hours(5);     % UTC time
 duration = seconds(minutes(3));
 
->>>>>>> refs/remotes/origin/main
+
+% startTime = datetime(2023,8,29,16,41+7,17+3) + hours(5);     % UTC time
+% duration = seconds(minutes(3));
+
+% startTime = datetime(2023,9,29,16,41+7,17+3) + hours(5);     % UTC time
+% duration = seconds(minutes(3));
+
 stopTime = startTime + seconds(duration);
 sampleTime = 0.5;                             % s
 sc = satelliteScenario(startTime, stopTime, sampleTime);
@@ -84,7 +79,7 @@ c = physconst("Lightspeed");
 F_c = 11.575e9;
 %%
 % [az, el, ~] = aer(sats, gs);
-[az, el, ~] = aer(gs, sats);
+[az, el, ~] = aer(gs, sats(1));
 elevation = el';
 visible_num = sum(elevation>=minElevation, 2);
 visible_idx = elevation>minElevation;

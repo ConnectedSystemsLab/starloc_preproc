@@ -4,7 +4,7 @@ addpath ../Tool_Functions/;
 setParam;
 
 %% load filename
-mon = 8; day = 29; hr = 16; minu = 41;
+mon = 9; day = 14; hr = 11; minu = 20;
 sample_rate = 2e6;
 center_freq = 11.575e9;
 IQ_Sample_file = get_file_name(mon, day, hr, minu, center_freq, sample_rate);
@@ -56,13 +56,13 @@ while 1
 %     ylim([0,0.05]);
 
     scatter(peaks_idx, peaks, 'filled');
-%     xlim([0,length(sig_fft_abs)])
-%     hold on;
-%     plot(sig_fft_abs);
-%     ylim([0,20])
-%     title(join([num2str(time), " ",num2str(peak2rms(sig_fft_abs))]));
-%     pause(0.2);
-%     clf;
+    xlim([0,length(sig_fft_abs)])
+    hold on;
+    plot(sig_fft_abs);
+    ylim([0,20])
+    title(join([num2str(time), " ",num2str(peak2rms(sig_fft_abs))]));
+    pause(0.1);
+    clf;
     idx = idx+move_by;
     time = time+move_by/sample_rate;
 
@@ -82,6 +82,25 @@ for i=1:1:length(fieldNames)
 arr = tracks_dict.(fieldNames{i});
 scatter(arr(:,1), arr(:,2), 'filled')
 hold on;
+end
+%%
+% Fill in the missing points in doppler curve with nan
+load('track_5_coords.mat');
+track_5_coords(:,1);
+start_time_stamp = track_5_coords(1,1);
+stop_time_stamp = track_5_coords(end,1);
+freq_bin = track_5_coords(:,1);
+time_step = 0.5;
+all_time_stamps = start_time_stamp:time_step:stop_time_stamp;
+all_freq_track_points = NaN([1 length(all_time_stamps)]);
+m = 1;
+f = -1e6:2e6/1024:1e6-1;
+for i=1:1:length(all_time_stamps)
+    expected_ts = all_time_stamps(i);
+    if any(track_5_coords(:,1)==expected_ts)
+        all_freq_track_points(i) = f(track_5_coords(m,2));
+        m = m+1;
+    end
 end
 
 %%

@@ -4,7 +4,7 @@ from scipy import io as sio
 from scipy.optimize import linear_sum_assignment
 import numpy as np
 
-peak_file_path = '/Users/ishani/UIUC/Research/starlink_ofdm/Central_Tone_Tracking/matlab.mat'
+peak_file_path = '/Users/ishani/UIUC/Research/starlink_ofdm/Central_Tone_Tracking/peak_array_9_12_11_27_5.mat'
 peak_array = sio.loadmat(peak_file_path)['peak_array']
 
 
@@ -82,7 +82,7 @@ step = 0.5
 max_dist = 30
 curr_tracks = []
 all_tracks = [] 
-fbin_hardware = 508
+fbin_hardware = 517
 max_time_till_no_update = 40
 
 for i in range(np.shape(peak_array)[0]):
