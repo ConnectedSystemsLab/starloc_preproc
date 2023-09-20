@@ -2,21 +2,23 @@
 
 # Run the usrp python script to record data in background
 # TODO echo "Running Python script:"
-# TODO python3 capture_data_usrp.py &
+# TODO 
+
 
 ### Check if there is a new file in a directory and 
 
 # Define the directory you want to monitor
-directory="./bash_scripts/new_files/"
+directory="/home/jidazhang/Desktop/usrp_data/9_19/"
 output_directory="./bash_scripts/new_files_output/"
 latest_checked_file="none"
 last_checked_file="none"
 all_checked_time="Nan"
 # Matlab input params
 
-sample_rate=100000000000
-if_visual=1
-
+sample_rate=100000000
+center_freq=11575000000
+if_visual=0
+time_capture=30
 # matlab_code=""
 # Set the duration. When no new file is entered in the directory for this duration, the program ends. 
 duration=120
@@ -25,7 +27,9 @@ duration=120
 start_time=$(date +%s)
 
 # Run the loop until the desired duration is reached
-while true; do
+while true; 
+do
+    python3 ./bash_scripts/usrp_auto.py "$sample_rate" "$center_freq" "$time_capture"
     # Put your loop logic here
     # For example, you can echo some message to simulate work being done
     echo "Loop is running..."
@@ -42,7 +46,7 @@ while true; do
                 echo "Need to check ${mod_files_arr[$i+1]}"
                 file_path="$directory${mod_files_arr[$i+1]}"
                 echo "$file_path"
-                # matlab -nodisplay -nodesktop -r "cd Tool_Functions; frame_detect_pss('$file_path',$sample_rate,$if_visual);exit;"
+                matlab -nodisplay -nodesktop -r "cd Tool_Functions; frame_detect_pss('$file_path',$sample_rate,$if_visual);exit;"
                 output_file="$output_directory${mod_files_arr[$i+1]}"
                 output_file_noframe="${output_file/.dat/_0.mat}"
                 output_file_frame="${output_file/.dat/_1.mat}"
@@ -67,7 +71,7 @@ while true; do
                 # call matlab script to check $file
                 file_path="$directory$file"
                 
-                # matlab -nodisplay -nodesktop -r "cd Tool_Functions; frame_detect_pss('$file_path',$sample_rate,$if_visual);exit;"
+                matlab -nodisplay -nodesktop -r "cd Tool_Functions; frame_detect_pss('$file_path',$sample_rate,$if_visual);exit;"
                 output_file="$output_directory$file"
                 output_file_noframe="${output_file/.dat/_0.mat}"
                 output_file_frame="${output_file/.dat/_1.mat}"
@@ -99,4 +103,3 @@ done
 # TODO you may want to terminate the uhd python script at this point
 echo "Files checked : ${mod_files_arr[@]}"
 echo "Experiemnt completed after $duration seconds."
-

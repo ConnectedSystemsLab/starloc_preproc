@@ -7,7 +7,7 @@ USRP_testing/spectrograms
 *.mat
 *.ipynb
 Satellite_Sim/matlab_code/Starlink.tle
-/bash_scripts/newf_iles
+/bash_scripts/new_files
 Tool_Functions/get_file_name.m
 OFDM_LAB/
 resamp_test.m
