@@ -8,11 +8,11 @@ setParam;
 %% doppler & channel
 dopp_rate = 0e3;
 dopp_init = 100e3;
-SNR = 124;
+SNR = 24;
 y = x/4;              % attenuation
 dop = chirp(t_1, dopp_init, t_1(end), dopp_rate*t_1(end)+dopp_init, "complex");
 % y = y.*exp(j*2*pi*(dopp_rate*t_1+dopp_init).*t_1);
-y = y.*dop;
+% y = y.*dop;
 y = awgn(y, SNR);
 y = y/10;
 

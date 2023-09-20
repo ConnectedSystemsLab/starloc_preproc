@@ -5,16 +5,17 @@ clear all; close all; clc;
 addpath ../Tool_Functions/;
 
 % load file
-mon = 9; day = 8; hr = 12; minu = 5;
+mon = 9; day = 8; hr = 12; minu = 5; sec = 39;
 sample_rate = 100e6;
 center_freq = 11.575e9;
 IQ_Sample_file = get_file_name(mon, day, hr, minu, center_freq, sample_rate);
+% IQ_Sample_file = get_file_name_new(mon, day, hr, minu, sec, center_freq, sample_rate);
 
 %% pss detect
 
 % CHOOSE one from three
 % pss_begin_idx is the begin index of detected frames
-[pss_begin_idx] = frame_detect_pss(IQ_Sample_file, sample_rate, 1);
+[pss_begin_idx] = frame_detect_pss(IQ_Sample_file, sample_rate, 0);
 % load pss_begin_idx_1.mat;
 % load pss_begin_idx_2.mat;
 
