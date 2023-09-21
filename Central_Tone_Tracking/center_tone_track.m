@@ -4,7 +4,7 @@ addpath ../Tool_Functions/;
 setParam;
 
 %% load filename
-mon = 9; day = 14; hr = 11; minu = 20;
+mon = 9; day = 14; hr = 11; minu = 27;
 sample_rate = 2e6;
 center_freq = 11.575e9;
 IQ_Sample_file = get_file_name(mon, day, hr, minu, center_freq, sample_rate);
@@ -36,7 +36,7 @@ while 1
     peaks = [];
     peaks_idx = [];
     for i=1:1:length(max)
-        if max(i) > mean(sig_fft_abs)+1.5*std(sig_fft_abs) 
+        if max(i) > mean(sig_fft_abs)+2*std(sig_fft_abs) 
             if i>1 && any((abs(midx(i)-midx(1:i-1)) < 5))
                 continue
             end
@@ -71,7 +71,7 @@ end
 figure;
 for i = 1:1:length(time_array)
     peak_idxes = find(peak_array(i,:));
-    peak_idxes = peak_idxes(peak_idxes~=509);
+    peak_idxes = peak_idxes(peak_idxes~=518);
     scatter(time_array(i)*ones(1,length(peak_idxes)), peak_idxes, 'blue', 'filled');
     hold on;
 end
@@ -85,8 +85,9 @@ hold on;
 end
 %%
 % Fill in the missing points in doppler curve with nan
-load('track_5_coords.mat');
-track_5_coords(:,1);
+% load('track_5_coords.mat');
+track_5_coords = track_28_coords;
+% track_5_coords(:,1);
 start_time_stamp = track_5_coords(1,1);
 stop_time_stamp = track_5_coords(end,1);
 freq_bin = track_5_coords(:,1);

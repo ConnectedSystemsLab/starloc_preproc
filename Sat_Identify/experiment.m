@@ -42,8 +42,8 @@ plot(t, dopp_recover);
 % time setting
 tic;
 
-startTime = datetime(2023,9,14,11,20,5) + hours(5);     % UTC time
-duration = seconds(minutes(3));
+startTime = datetime(2023,9,14,11,27,5+260) + hours(5);     % UTC time
+duration = seconds(minutes(1));
 
 
 % startTime = datetime(2023,8,29,16,41+7,17+3) + hours(5);     % UTC time
@@ -79,7 +79,7 @@ c = physconst("Lightspeed");
 F_c = 11.575e9;
 %%
 % [az, el, ~] = aer(sats, gs);
-[az, el, ~] = aer(gs, sats(1));
+[az, el, ~] = aer(gs, sats);
 elevation = el';
 visible_num = sum(elevation>=minElevation, 2);
 visible_idx = elevation>minElevation;
@@ -114,7 +114,7 @@ for idx = 1:numSatellites
         %     continue;
         % end
 
-        plot(t_(2:end), diff(doppler(:, idx)), 'DisplayName', sats(idx).Name, 'LineStyle', '--');
+        plot(t_(2:end), (diff(doppler(:, idx))), 'DisplayName', sats(idx).Name, 'LineStyle', '--');
     end
 end
 legend;
