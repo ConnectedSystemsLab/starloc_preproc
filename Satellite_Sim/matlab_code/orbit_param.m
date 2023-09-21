@@ -9,6 +9,11 @@ if ~exist("tles/"+num2str(mon)+"_"+num2str(day))
     "sup-gp.php?FILE=starlink&FORMAT=tle";
     urlwrite(URL, TLE);
 end
+startTime = datetime("today") + hours(5);     % UTC time
+duration = seconds(minutes(1));
+stopTime = startTime + seconds(duration);
+sampleTime = 1;                             % s
+sc = satelliteScenario(startTime, stopTime, sampleTime);
 sats = satellite(sc, TLE);
 numSats = length(sats);
 G = 6.6743e-11;

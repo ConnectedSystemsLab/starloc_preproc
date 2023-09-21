@@ -15,8 +15,8 @@ IQ_Sample_file = get_file_name(mon, day, hr, minu, center_freq, sample_rate);
 
 % CHOOSE one from three
 % pss_begin_idx is the begin index of detected frames
-[pss_begin_idx] = frame_detect_pss(IQ_Sample_file, sample_rate, 0);
-% load pss_begin_idx_1.mat;
+% [pss_begin_idx] = frame_detect_pss(IQ_Sample_file, sample_rate, 0);
+load pss_begin_idx_1.mat;
 % load pss_begin_idx_2.mat;
 
 T_f = 1/750;                        % time of a frame (s)
@@ -85,7 +85,7 @@ SSS = get_sss(1024);        % freq domain SSS
 
 % {4-QAM, QPSK, 16-QAM} -> {1, 2, 3}
 [data_bits] = deal(zeros(396, 300, frame_num));
-modulation = zeros(300, frame_num);
+% modulation = zeros(300, frame_num);
 mod_list = ["4-QAM", "QPSK", "16-QAM"];
 
 for idx = 1:frame_num
@@ -103,7 +103,12 @@ for idx = 1:frame_num
     sss_upsamp = sss_upsamp(33:end);    % remove cp
     H = fft(sss_upsamp)./SSS;
     H([1 2 1023 1024]) = 0;
-
+    
+    css_upsamp = recv(1+1056*(302-1)+20:1056*302+20);
+    css_upsamp = css_upsamp(33:end);
+    t_1 = fft(css_upsamp);
+    t_1 = [t_1(3:200);t_1(825:end-2)];
+    H_2 = t_1./CSS_good;
     for idx_f = 3:302
 
         frame_upsamp = recv(1+1056*(idx_f-1)+20:1056*idx_f+20);
@@ -129,9 +134,9 @@ for idx = 1:frame_num
         
         % constellation point visulization, comment if don't want to
         % plot(abs(ifft(H)));
-        scatter(real(symbols_good), imag(symbols_good));
-        xlim([-2.5 2.5]); ylim([-2.5 2.5]);
-        title("Frame "+num2str(idx)+"-"+mod_list(modulation(idx_f-2, idx)));pause(.1);
+        % scatter(real(symbols_good), imag(symbols_good));
+        % xlim([-2.5 2.5]); ylim([-2.5 2.5]);
+        % title("Frame "+num2str(idx)+"-"+mod_list(modulation(idx_f-2, idx)));pause(.1);
     end
 end
 
