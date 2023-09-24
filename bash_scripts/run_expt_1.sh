@@ -16,7 +16,7 @@ all_checked_time="Nan"
 # Matlab input params
 
 sample_rate=100000000
-center_freq=11575000000
+center_freq=11325000000
 if_visual=0
 time_capture=180
 # matlab_code=""
