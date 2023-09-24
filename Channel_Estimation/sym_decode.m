@@ -5,19 +5,20 @@ clear all; close all; clc;
 addpath ../Tool_Functions/;
 
 % load file
-mon = 9; day = 8; hr = 12; minu = 5; sec = 39;
+mon = 9; day = 21; hr = 17; minu = 11; sec = 31;
 sample_rate = 100e6;
-center_freq = 11.575e9;
-IQ_Sample_file = get_file_name(mon, day, hr, minu, center_freq, sample_rate);
-% IQ_Sample_file = get_file_name_new(mon, day, hr, minu, sec, center_freq, sample_rate);
+center_freq = 11.325e9;
+% IQ_Sample_file = get_file_name(mon, day, hr, minu, center_freq, sample_rate);
+IQ_Sample_file = get_file_name_new(mon, day, hr, minu, sec, center_freq, sample_rate);
 
 %% pss detect
 
 % CHOOSE one from three
 % pss_begin_idx is the begin index of detected frames
 % [pss_begin_idx] = frame_detect_pss(IQ_Sample_file, sample_rate, 0);
-load pss_begin_idx_1.mat;
+% load pss_begin_idx_1.mat;
 % load pss_begin_idx_2.mat;
+load pss_begin_idx_3.mat;
 
 T_f = 1/750;                        % time of a frame (s)
 N_f = T_f*sample_rate;              % # of samples in a frame
@@ -46,8 +47,8 @@ for idx = 1:frame_num
     [~, max_idx] = max(abs(recv_fft_));
 
     % CHOOSE
-    f_d(idx) = freq_(max_idx)-43.67e3*2+F/2;
-    % f_d(idx) = freq_(max_idx)+F/2;
+    % f_d(idx) = freq_(max_idx)-43.67e3*2+F/2;
+    f_d(idx) = freq_(max_idx)+F/2;
 end
 [dopp_rate, dopp_init] = least_square(t_d, f_d);
 
@@ -95,8 +96,9 @@ for idx = 1:frame_num
     recv = my_resample_2(recv, 240e6, sample_rate);
 
     % CHOOSE
-    f_d = t_f*dopp_rate+dopp_init;
+    % f_d = t_f*dopp_rate+dopp_init;
     % f_d = t_f*dopp_rate+dopp_init-1.84e3;
+    f_d = t_f*dopp_rate+dopp_init-1.5e3;
 
     recv = recv.*exp(j*2*pi*(-f_d)*[0:length(recv)-1]'/240e6);
     sss_upsamp = recv(1057+20:2112+20);
@@ -105,10 +107,14 @@ for idx = 1:frame_num
     H([1 2 1023 1024]) = 0;
     
     css_upsamp = recv(1+1056*(302-1)+20:1056*302+20);
-    css_upsamp = css_upsamp(33:end);
-    t_1 = fft(css_upsamp);
-    t_1 = [t_1(3:200);t_1(825:end-2)];
-    H_2 = t_1./CSS_good;
+    css_upsamp = css_upsamp(33:end);    % remove cp
+    CSS = fft(css_upsamp);
+    CSS = [CSS(3:200);CSS(825:end-2)];
+    H_ = CSS./get_CSS();
+    H_good = [H(3:200);H(825:end-2)];
+    % tmp = tmp+fftshift(angle(H_./H_good));
+    % plot(fftshift(angle(H_./H_good)));pause(.1)
+
     for idx_f = 3:302
 
         frame_upsamp = recv(1+1056*(idx_f-1)+20:1056*idx_f+20);
@@ -134,9 +140,9 @@ for idx = 1:frame_num
         
         % constellation point visulization, comment if don't want to
         % plot(abs(ifft(H)));
-        % scatter(real(symbols_good), imag(symbols_good));
-        % xlim([-2.5 2.5]); ylim([-2.5 2.5]);
-        % title("Frame "+num2str(idx)+"-"+mod_list(modulation(idx_f-2, idx)));pause(.1);
+        scatter(real(symbols_good), imag(symbols_good));
+        xlim([-2.5 2.5]); ylim([-2.5 2.5]);
+        title("Frame "+num2str(idx)+"-"+mod_list(modulation(idx_f-2, idx)));pause(.1);
     end
 end
 

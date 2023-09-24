@@ -14,6 +14,7 @@ load data_bits_1.mat;
 
 %% first nine symbols
 % the first 9 symbols share the same modulation (QPSK)
+clear carrier_list
 first_nine_symbol = data_bits(:, 1:9, :);
 
 for symb_idx = 1:9
@@ -29,9 +30,35 @@ for symb_idx = 1:9
     end
     % calculate the mean of one subcarrier across different frames
     symb_mean = mean(one_symbol, 2);
-    find(abs(symb_mean-round(symb_mean))<.05 & (mod(round(symb_mean), 2) == is_odd_sc))
+    scs = num2str(find(abs(symb_mean-round(symb_mean))<.1 & (mod(round(symb_mean), 2) == is_odd_sc)));
+    str_tmp = "";
+    for sc_idx = 1:size(scs,1)
+        str_tmp = str_tmp+scs(sc_idx,:)+",";
+    end
+    carrier_list(symb_idx,:) = str_tmp;
 end
 
+%% first nine symbols even or odd
+load data_bits_1.mat;
+[N, M, F] = size(data_bits);
+is_odd = zeros(N, 9);
+first_nine_symbol = data_bits(:, 1:9, :);
+for symb_idx = 1:9
+    one_symbol = squeeze(first_nine_symbol(:, symb_idx, :));
+    % confirm whether one subcarrier is odd or even
+    for sc_idx = 1:N
+        one_sc = one_symbol(sc_idx, :);
+        num_odd = sum(mod(one_sc, 2) == 1);
+        if num_odd > F/2
+            is_odd(sc_idx, symb_idx) = 1;
+        end
+    end
+end
+imagesc(is_odd);
+colorbar('Ticks', [0 1], 'TickLabels', ["even" "odd"])
+xlabel("symbol 1-9")
+ylabel("subcarrier index")
+title("first nine symbols' odd or even of sat #2");
 %% common symbols in one frame
 frame_idx = 107;
 data = data_bits(:, :, frame_idx);

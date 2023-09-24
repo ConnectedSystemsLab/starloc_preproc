@@ -23,7 +23,7 @@ z = zeros(length(filter_kernal)-1, 1);
 
 read_idx = 1;           % # of read times
 % need to be adjusted
-threshold = 60*mean(abs(filter(filter_kernal, 1, noise)));
+threshold = 70*mean(abs(filter(filter_kernal, 1, noise)));
 find_frame = false;
 
 while 1
@@ -34,7 +34,8 @@ while 1
     file_idx = (read_idx-1)*num_samples+1;
 
     % [signal, is_end] = fread_complex(f, num_samples);
-    signal = read_complex_binary2(file_path, num_samples, file_idx);    
+    signal = read_complex_binary2(file_path, num_samples, file_idx);
+    signal = signal.*exp(j*2*pi*-85e3*[0:num_samples-1]'/sample_rate);
     if length(signal) ~= num_samples
         % this means the end of the file
         break;
@@ -99,16 +100,17 @@ root_dir = "../bash_scripts/new_files_output/"+num2str(today_month)+"_"+num2str(
 if ~exist(root_dir)
     mkdir(root_dir);
 end
-if find_frame
-    save(root_dir+file_name+"_1.mat", "frame_begin_idx");
-    frame_num = length(frame_begin_idx);
-    N_f = 1/750*sample_rate;
-    frames = zeros(frame_num, N_f);
-    for idx = 1:frame_num
-        frames(idx, :) = read_complex_binary2(file_path, N_f, frame_begin_idx(idx));
-    end
-    save("../bash_scripts/new_files/"+num2str(today_month)+"_"+num2str(today_day)+"/"+file_name+".mat", "frames");
-    fprintf("FIND FRAMESSSSSSSSSSSSSSSSSSSSSSSSSSSS!\n");
-else
-    save(root_dir+file_name+"_0.mat", "frame_begin_idx");
+% if find_frame
+%     save(root_dir+file_name+"_1.mat", "frame_begin_idx");
+%     frame_num = length(frame_begin_idx);
+%     N_f = ceil(1/750*sample_rate);
+%     frames = zeros(frame_num, N_f);
+%     for idx = 1:frame_num
+%         frames(idx, :) = read_complex_binary2(file_path, N_f, frame_begin_idx(idx));
+%     end
+%     save("../bash_scripts/new_files/"+num2str(today_month)+"_"+num2str(today_day)+"/"+file_name+".mat", "frames");
+%     fprintf("FIND FRAMESSSSSSSSSSSSSSSSSSSSSSSSSSSS!\n");
+% else
+%     save(root_dir+file_name+"_0.mat", "frame_begin_idx");
+% end
 end
