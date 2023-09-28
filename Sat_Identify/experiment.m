@@ -33,16 +33,31 @@ F_c = 11.575e9;
 % t = [0:length(dopp_exp_2)-1]'*0.1;
 % F_c = 11.575e9;
 %% parameter search
-[dopp_recover, orb_param] = orbit_estimate(t, dopp_exp_2, F_c);
+[dopp_recover, orb_param] = orbit_estimate(a(:,1), a(:,2), F_c);
 hold on;
 plot(t, dopp_recover);
+%% parameter search for all tracks
+F_c = 11.575e9;
+dopp_recover_cell = cell([length(complete_tracks_cell) 1]);
+for i=1:1:length(complete_tracks_cell)
+    dopp_exp = complete_tracks_cell{i}(:,2);
+    if length(dopp_exp) < 10
+        continue
+    end
+%     t = [0:length(dopp_exp)-1]'*0.5;
+    t = complete_tracks_cell{i}(:,1);
+    [dopp_recover, orb_param] = orbit_estimate(t, dopp_exp, F_c);
+    dopp_recover_cell{i} = [complete_tracks_cell{i}(:,1) dopp_recover];
+    plot(t, dopp_recover);
+    hold on;
+end
 
 %% compare
 % System parameters
 % time setting
 tic;
 
-startTime = datetime(2023,9,14,11,20,5) + hours(5);     % UTC time
+startTime = datetime(2023,9,14,11,27,5) + hours(5);     % UTC time
 duration = seconds(minutes(3));
 
 
@@ -124,4 +139,9 @@ for ii = 1:1000
     tmp = plot([NaN(ii, 1) ; diff(my_mean(dopp_recover,1))], LineWidth=1, Color=[0 0 1]);
     pause(.3)
     delete(tmp);
+end
+
+%%
+for i=1:1:length(complete_tracks_cell)
+plot(complete_tracks_cell{i}(1:end,1), (complete_tracks_cell{i}(:,2)), '--', 'Color', c(i,:), 'LineWidth', 1.5);
 end

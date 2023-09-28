@@ -4,7 +4,7 @@ addpath ../Tool_Functions/;
 setParam;
 
 %% load filename
-mon = 9; day = 14; hr = 11; minu = 20;
+mon = 9; day = 14; hr = 11; minu = 27;
 sample_rate = 2e6;
 center_freq = 11.575e9;
 IQ_Sample_file = get_file_name(mon, day, hr, minu, center_freq, sample_rate);
@@ -36,7 +36,7 @@ while 1
     peaks = [];
     peaks_idx = [];
     for i=1:1:length(max)
-        if max(i) > mean(sig_fft_abs)+1.5*std(sig_fft_abs) 
+        if max(i) > mean(sig_fft_abs)+2*std(sig_fft_abs) 
             if i>1 && any((abs(midx(i)-midx(1:i-1)) < 5))
                 continue
             end
@@ -71,7 +71,7 @@ end
 figure;
 for i = 1:1:length(time_array)
     peak_idxes = find(peak_array(i,:));
-    peak_idxes = peak_idxes(peak_idxes~=509);
+%     peak_idxes = peak_idxes(peak_idxes~=509);
     scatter(time_array(i)*ones(1,length(peak_idxes)), peak_idxes, 'blue', 'filled');
     hold on;
 end
@@ -86,7 +86,6 @@ end
 %%
 % Fill in the missing points in doppler curve with nan
 load('track_5_coords.mat');
-track_5_coords(:,1);
 start_time_stamp = track_5_coords(1,1);
 stop_time_stamp = track_5_coords(end,1);
 freq_bin = track_5_coords(:,1);
@@ -103,6 +102,29 @@ for i=1:1:length(all_time_stamps)
     end
 end
 
+%%
+% get complete track points for all tracks
+tracks_cell = struct2cell(tracks_dict);
+complete_tracks_cell = cell([length(tracks_cell) 1]);
+for i=1:1:length(tracks_cell)
+    track = tracks_cell{i};
+    start_time_stamp = track(1,1);
+    stop_time_stamp = track(end,1);
+    freq_bin = track(:,1);
+    time_step = 0.5;
+    all_time_stamps = start_time_stamp:time_step:stop_time_stamp;
+    all_freq_track_points = NaN([1 length(all_time_stamps)]);
+    m = 1;
+    f = -1e6:2e6/1024:1e6-1;
+    for j=1:1:length(all_time_stamps)
+        expected_ts = all_time_stamps(j);
+        if any(track(:,1)==expected_ts)
+            all_freq_track_points(j) = f(track(m,2));
+            m = m+1;
+        end
+    end
+    complete_tracks_cell{i} = [all_time_stamps;all_freq_track_points]';
+end
 %%
 % f_hardware = 145642; % not needed
 % T_avg = 1;
@@ -132,3 +154,12 @@ end
 %     pause(0.1);
 %     
 % end
+%%
+figure;
+struct_cell = struct2cell(tracks_dict);
+for i=1:1:length(struct_cell)
+    scatter(struct_cell{i}(1:end,1), (struct_cell{i}(:,2)));
+    title(i);
+    pause(0.5);
+    clf;
+end
