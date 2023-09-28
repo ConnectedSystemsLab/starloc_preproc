@@ -16,11 +16,7 @@ for i_idx = 1:length(inclination_list)
     i_hat = inclination_list(i_idx);
     % i_hat
     for h_hat = h_min:h_step:h_max
-<<<<<<< HEAD
-        for t_0_hat = 0:.5:round(t(end))
-=======
         for t_0_hat = t(1):.5:round(t(end))
->>>>>>> refs/remotes/origin/main
             for theta_hat = ele_min:ele_step:ele_max
                 dopp_estimate = doppler_curve_2(t,h_hat,i_hat,t_0_hat,theta_hat,0,F_c);
                 dopp_estimate = dopp_estimate(~is_nan_idx);
