@@ -15,10 +15,11 @@ end
 
 %% System parameters
 % time setting
-startTime = datetime(2023,8,29,16,47,1) + hours(5);     % UTC time
-duration = seconds(minutes(5));
+% startTime = datetime(2023,9,14,11,27,5) + hours(5);     % UTC time
+startTime = datetime(2023,9,14,11,27,5);     % UTC time
+duration = seconds(minutes(8));
 stopTime = startTime + seconds(duration);
-sampleTime = 1;                             % s
+sampleTime = .5;                             % s
 sc = satelliteScenario(startTime, stopTime, sampleTime);
 
 % Satellite setting
@@ -28,7 +29,7 @@ fprintf('load done, %d starlink satellites in total\n', numSatellites);
 
 % GS setting
 GSName = "U. of I.";
-minElevation = 55;
+minElevation = 60;
 % real location
 lat = +40.11389690596162;
 lon = -88.22484814695467;
@@ -61,6 +62,7 @@ dir(3, :, :) = (-sind(el))';
 doppler = -squeeze(dot(satV, dir, 1))*F_c/c;
 doppler(~visible_idx) = nan;
 
+dopplershift(gs, sats, Frequency=center_freq);
 % doppler = dopplershift(sats, gs, Frequency=F_c);
 fprintf('simulation done, %d mins used\n', round(toc/60));
 
@@ -92,17 +94,13 @@ end
 legend;
 
 %% real curve
-% [az, el, ~] = aer(gs_2, sat);
-% elevation = el';
-% visible_num = sum(elevation>=minElevation, 2);
-% visible_idx = elevation>minElevation;
-% 
-% [~, satV] = states(sat, "CoordinateFrame", "geographic");
-% dir = zeros(3, size(el, 2), size(el, 1));
-% dir(1, :, :) = (cosd(el).*cosd(az))';
-% dir(2, :, :) = (cosd(el).*sind(az))';
-% dir(3, :, :) = (-sind(el))';
-% doppler = -squeeze(dot(satV, dir, 1))*F_c/c;
-% doppler(~visible_idx) = nan;
-% % figure(5);
-% % plot(t, doppler, 'DisplayName', sat.Name);
+figure(3);
+hold on; grid on;
+for idx = 1:numSatellites
+    if sats(idx).Name == "STARLINK-1012"
+        plot(t(2:end), diff(doppler(:, idx)), 'DisplayName', sats(idx).Name);
+        plot(t(2:end), diff(ans(idx,:)), 'DisplayName', sats(idx).Name);
+        break;
+    end
+end
+legend;

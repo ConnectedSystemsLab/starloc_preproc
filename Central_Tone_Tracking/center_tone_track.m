@@ -71,7 +71,7 @@ end
 figure;
 for i = 1:1:length(time_array)
     peak_idxes = find(peak_array(i,:));
-%     peak_idxes = peak_idxes(peak_idxes~=509);
+    peak_idxes = peak_idxes(peak_idxes~=518);
     scatter(time_array(i)*ones(1,length(peak_idxes)), peak_idxes, 'blue', 'filled');
     hold on;
 end
@@ -85,7 +85,9 @@ hold on;
 end
 %%
 % Fill in the missing points in doppler curve with nan
-load('track_5_coords.mat');
+% load('track_5_coords.mat');
+track_5_coords = track_28_coords;
+% track_5_coords(:,1);
 start_time_stamp = track_5_coords(1,1);
 stop_time_stamp = track_5_coords(end,1);
 freq_bin = track_5_coords(:,1);
