@@ -77,7 +77,7 @@ for i = 1:1:length(time_array)
 end
 %% point-to-curve assignment plot (run python script to get output)
 load('output_tracks.mat')
-fieldNames = fieldnames(tracks_dict);
+field_Names = fieldnames(tracks_dict);
 for i=1:1:length(fieldNames)
 arr = tracks_dict.(fieldNames{i});
 scatter(arr(:,1), arr(:,2), 'filled')
