@@ -1,8 +1,18 @@
 function [dopp_recover, res] = orbit_estimate(t, dopp_observe, F_c)
+% this function recovers the continuous doppler curve as well as the most likely 
+% orbital parameters from the discontinuous observed doppler curve
+% input: the time vector; the observed doppler; the carrier frequency
+% output: recovered doppler curve;
+%         a row vector "res"
+%         res(1) = estimated orbit altitude
+%         res(2) = estimated orbit inclination angle (in degree)
+%         res(3) = estimated time when passing the maximum elevation
+%         res(4) = estimated maximum elevation 
+%         res(5) = a constant frequency bias
+
 inclination_list = [53 70 43 97.65];
 h_min = 520e3; h_max = 590e3; h_step = 10e3;
 ele_min = 40; ele_step = .5; ele_max = 90;
-% dopp_max = 250e3; dopp_min = -250e3;
 f_spacing = 44e3;
 loss_min = inf;
 

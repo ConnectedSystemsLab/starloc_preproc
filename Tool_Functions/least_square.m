@@ -1,5 +1,6 @@
 function [k, b] = least_square(x, y)
-% y = kx+b
+% this function outputs the linear least square solution for data points
+% (x, y), i.e., [k, b] = argmin ||kx+b-y||^2
 
 if length(x) ~= length(y)
     error('input size does not match');
