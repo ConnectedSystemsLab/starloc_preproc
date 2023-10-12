@@ -1,7 +1,7 @@
 tic;
 % TLE set up
 today_date = datetime("today");
-mon = today_date.Month; day = today_date.Day;
+mon = 9; day = 14;
 TLE = "tles/"+num2str(mon)+"_"+num2str(day)+"/Starlink.tle";
 if ~exist("tles/"+num2str(mon)+"_"+num2str(day))
     mkdir("tles/"+num2str(mon)+"_"+num2str(day));
@@ -9,6 +9,12 @@ if ~exist("tles/"+num2str(mon)+"_"+num2str(day))
     "sup-gp.php?FILE=starlink&FORMAT=tle";
     urlwrite(URL, TLE);
 end
+startTime = datetime(2023, mon, day, 11, 27, 5) + hours(5);     % UTC time
+duration = seconds(minutes(10));
+stopTime = startTime + seconds(duration);
+sampleTime = 1;                             % s
+sc = satelliteScenario(startTime, stopTime, sampleTime);
+
 sats = satellite(sc, TLE);
 numSats = length(sats);
 G = 6.6743e-11;

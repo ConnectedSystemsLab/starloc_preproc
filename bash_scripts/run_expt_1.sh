@@ -8,17 +8,17 @@
 ### Check if there is a new file in a directory and 
 
 # Define the directory you want to monitor
-directory="/home/jidazhang/Desktop/usrp_data/9_20/"
-output_directory="./bash_scripts/new_files_output/9_20/"
+directory="/home/jidazhang/Desktop/usrp_data/9_21/"
+output_directory="./bash_scripts/new_files_output/9_21/"
 latest_checked_file="none"
 last_checked_file="none"
 all_checked_time="Nan"
 # Matlab input params
 
 sample_rate=100000000
-center_freq=11575000000
+center_freq=11325000000
 if_visual=0
-time_capture=120
+time_capture=180
 # matlab_code=""
 # Set the duration. When no new file is entered in the directory for this duration, the program ends. 
 duration=120

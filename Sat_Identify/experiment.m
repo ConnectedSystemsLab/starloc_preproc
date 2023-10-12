@@ -19,44 +19,54 @@ for idx = 1:1952
 end
 F_c = 11.575e9;
 t = [0:length(dopp_exp_2)-1]'*0.1;
-<<<<<<< HEAD
 figure(1); scatter(t, dopp_exp_2)
 %%
 % load('track_5_coords.mat')
 dopp_exp_2 = all_freq_track_points;
 t = [0:length(dopp_exp_2)-1]'*0.5;
-=======
-figure(1); plot(t, dopp_exp_2)
-%%
-load("track_5_coords.mat");
-% f_list = 0:2e6/1024:1023*2e6/1024;
-dopp_exp_2 = (2e6/1024)*track_5_coords(:,2);
-t = [0:length(dopp_exp_2)-1]'*0.1;
->>>>>>> refs/remotes/origin/main
+figure(1); plot(t, dopp_exp_2);
 F_c = 11.575e9;
+%%
+% load("track_5_coords.mat");
+% % f_list = 0:2e6/1024:1023*2e6/1024;
+% dopp_exp_2 = (2e6/1024)*track_5_coords(:,2);
+% t = [0:length(dopp_exp_2)-1]'*0.1;
+% F_c = 11.575e9;
 %% parameter search
-[dopp_recover, orb_param] = orbit_estimate(t, dopp_exp_2, F_c);
+[dopp_recover, orb_param] = orbit_estimate(a(:,1), a(:,2), F_c);
 hold on;
 plot(t, dopp_recover);
+%% parameter search for all tracks
+F_c = 11.575e9;
+dopp_recover_cell = cell([length(complete_tracks_cell) 1]);
+for i=1:1:length(complete_tracks_cell)
+    dopp_exp = complete_tracks_cell{i}(:,2);
+    if length(dopp_exp) < 10
+        continue
+    end
+%     t = [0:length(dopp_exp)-1]'*0.5;
+    t = complete_tracks_cell{i}(:,1);
+    [dopp_recover, orb_param] = orbit_estimate(t, dopp_exp, F_c);
+    dopp_recover_cell{i} = [complete_tracks_cell{i}(:,1) dopp_recover];
+    plot(t, dopp_recover);
+    hold on;
+end
 
 %% compare
 % System parameters
 % time setting
 tic;
-<<<<<<< HEAD
-% <<<<<<< HEAD
-startTime = datetime(2023,8,29,16,41+7,17+3) + hours(5);     % UTC time
-duration = seconds(minutes(3));
-% =======
-% startTime = datetime(2023,8,29,16,46,57) + hours(5);     % UTC time
-% duration = seconds(minutes(15));
-% >>>>>>> refs/remotes/origin/main
-=======
 
-startTime = datetime(2023,8,29,16,41+7,17+3) + hours(5);     % UTC time
-duration = seconds(minutes(3));
+startTime = datetime(2023,9,14,11,27,5+260) + hours(5);     % UTC time
+duration = seconds(minutes(1));
 
->>>>>>> refs/remotes/origin/main
+
+% startTime = datetime(2023,8,29,16,41+7,17+3) + hours(5);     % UTC time
+% duration = seconds(minutes(3));
+
+% startTime = datetime(2023,9,29,16,41+7,17+3) + hours(5);     % UTC time
+% duration = seconds(minutes(3));
+
 stopTime = startTime + seconds(duration);
 sampleTime = 0.5;                             % s
 sc = satelliteScenario(startTime, stopTime, sampleTime);
@@ -119,7 +129,7 @@ for idx = 1:numSatellites
         %     continue;
         % end
 
-        plot(t_(2:end), diff(doppler(:, idx)), 'DisplayName', sats(idx).Name, 'LineStyle', '--');
+        plot(t_(2:end), (diff(doppler(:, idx))), 'DisplayName', sats(idx).Name, 'LineStyle', '--');
     end
 end
 legend;
@@ -129,4 +139,9 @@ for ii = 1:1000
     tmp = plot([NaN(ii, 1) ; diff(my_mean(dopp_recover,1))], LineWidth=1, Color=[0 0 1]);
     pause(.3)
     delete(tmp);
+end
+
+%%
+for i=1:1:length(complete_tracks_cell)
+plot(complete_tracks_cell{i}(1:end,1), (complete_tracks_cell{i}(:,2)), '--', 'Color', c(i,:), 'LineWidth', 1.5);
 end

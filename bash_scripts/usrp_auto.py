@@ -84,7 +84,7 @@ class usrp_auto(gr.top_block, Qt.QWidget):
         self.mon = mon = self.now.month
         self.minu = minu = self.now.minute
         self.hr = hr = self.now.hour
-        self.freq = freq = freq_4
+        self.freq = freq = int(args.center_freq)
         self.day = day = self.now.day
         self.sec = sec = self.now.second
         self.root = root = "/home/jidazhang/Desktop/usrp_data/"
