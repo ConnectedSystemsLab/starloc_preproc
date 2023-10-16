@@ -11,8 +11,8 @@ function [dopp_recover, res] = orbit_estimate(t, dopp_observe, F_c)
 %         res(5) = a constant frequency bias
 
 inclination_list = [53 70 43 97.65];
-h_min = 200e3; h_max = 590e3; h_step = 10e3;
-ele_min = 40; ele_step = .5; ele_max = 90;
+h_min = 400e3; h_max = 590e3; h_step = 10e3;
+ele_min = 60; ele_step = .2; ele_max = 90;
 % dopp_max = 250e3; dopp_min = -250e3;
 % f_spacing = 44e3;
 loss_min = inf;
@@ -25,7 +25,7 @@ dopp_observe_ = dopp_observe(~is_nan_idx);
 
 for i_idx = 1:length(inclination_list)
     i_hat = inclination_list(i_idx);
-    % i_hat
+    i_hat
     for h_hat = h_min:h_step:h_max
         for t_0_hat = t(1):.5:round(t(end))
             for theta_hat = ele_min:ele_step:ele_max

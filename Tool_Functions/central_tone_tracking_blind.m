@@ -63,8 +63,8 @@ while 1
     [spec_max, f_max_idx] = max(sig_fft_abs);
     % determine whether it's hardware peak
     three_db_width = sum(sig_fft_abs>spec_max/2);
+    sig_fft_tmp = sig_fft_abs;
     if three_db_width < 4
-        sig_fft_tmp = sig_fft_abs;
         sig_fft_tmp(f_max_idx-4*three_db_width:f_max_idx+4*three_db_width) =...
             mean(sig_fft_abs(0.1*length(sig_fft_abs):0.9*length(sig_fft_abs)));
         [spec_max, f_max_idx] = max(sig_fft_tmp);
