@@ -1,9 +1,11 @@
 %%
 clear all; close all; clc;
+addpath ../;
 addpath ../Tool_Functions/;
 setParam;
 
 %% load filename
+%  IQ_Sample_file = "D:\Desktop\study\2023_summer\starlink_ofdm\time_11_27_freq_11_575G_bw_2.0M.dat";
 mon = 9; day = 14; hr = 11; minu = 27;
 sample_rate = 2e6;
 center_freq = 11.575e9;
@@ -17,7 +19,7 @@ t_fft = n_fft/central_bw;
 num_read_samples = T_avg*sample_rate; %t_fft*sample_rate;
 
 idx = 1;
-figure;
+fig = figure;
 time = num_read_samples/sample_rate;
 move_by = num_read_samples/2;
 time_array = [];
@@ -25,7 +27,8 @@ peak_array = [];
 while 1
     sig = read_complex_binary2(IQ_Sample_file, num_read_samples, idx);
     if length(sig) ~= num_read_samples
-        fprintf("breaking")
+        fprintf("breaking\n");
+        close(fig);
         break;
     end
     
@@ -59,13 +62,30 @@ while 1
     xlim([0,length(sig_fft_abs)])
     hold on;
     plot(sig_fft_abs);
-    ylim([0,20])
+    ylim([0,70])
     title(join([num2str(time), " ",num2str(peak2rms(sig_fft_abs))]));
     pause(0.1);
     clf;
     idx = idx+move_by;
     time = time+move_by/sample_rate;
-
+    if time == 280
+        1
+    end
+end
+%% select one sat
+tt = []; dd = [];
+for i = 1:1:length(time_array)
+    peak_idxes = find(peak_array(i,:));
+    peak_idxes = peak_idxes(peak_idxes~=518);
+    if time_array(i)<272.5 || time_array(i)>309.5
+        continue
+    end
+    if isempty(peak_idxes)
+        continue
+    end
+    tt = [tt ; time_array(i)];
+    [~,ii] = min(abs(peak_idxes-(-2.92*time_array(i)+1336)));
+    dd = [dd ; peak_idxes(ii)];
 end
 %%
 figure;

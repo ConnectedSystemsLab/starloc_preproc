@@ -16,7 +16,7 @@ for i=1:1:length(tracks_cell)
     all_time_stamps = start_time_stamp:time_step:stop_time_stamp;
     all_freq_track_points = NaN([1 length(all_time_stamps)]);
     m = 1;
-    f = -1e6:2e6/1024:1e6-1;
+    f = -1.024e6/2:1.024e6/1024:1.024e6/2;
     for j=1:1:length(all_time_stamps)
         expected_ts = all_time_stamps(j);
         if any(track(:,1)==expected_ts)
@@ -28,22 +28,22 @@ for i=1:1:length(tracks_cell)
 end
 %% parameter search for all tracks 
 
-load('Sat_Identify/dopp_recover_cell_9_14_11_27.mat');
+% load('Sat_Identify/dopp_recover_cell_9_14_11_27.mat');
 % uncomment below if you don't have the file saved
-% F_c = 11.575e9;
-% dopp_recover_cell = cell([length(complete_tracks_cell) 1]);
-% for i=1:1:length(complete_tracks_cell)
-%     dopp_exp = complete_tracks_cell{i}(:,2);
-%     if length(dopp_exp) < 10
-%         continue
-%     end
-% %     t = [0:length(dopp_exp)-1]'*0.5;
-%     t = complete_tracks_cell{i}(:,1);
-%     [dopp_recover, orb_param] = orbit_estimate(t, dopp_exp, F_c);
-%     dopp_recover_cell{i} = [complete_tracks_cell{i}(:,1) dopp_recover];
-% %     plot(t, dopp_recover);
-% %     hold on;
-% end
+F_c = 11.575e9;
+dopp_recover_cell = cell([length(complete_tracks_cell) 1]);
+for i=1:1:length(complete_tracks_cell)
+    dopp_exp = complete_tracks_cell{i}(:,2);
+    if length(dopp_exp) < 10
+        continue
+    end
+%     t = [0:length(dopp_exp)-1]'*0.5;
+    t = complete_tracks_cell{i}(:,1);
+    [dopp_recover, orb_param] = orbit_estimate(t, dopp_exp, F_c);
+    dopp_recover_cell{i} = [complete_tracks_cell{i}(:,1) dopp_recover];
+%     plot(t, dopp_recover);
+%     hold on;
+end
 %% plot estimated doppler
 
 for i=1:1:length(dopp_recover_cell)
