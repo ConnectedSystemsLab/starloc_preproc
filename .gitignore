@@ -6,6 +6,7 @@ USRP_testing/spectrograms
 *.php
 *.mat
 *.ipynb
+*.dat
 Satellite_Sim/matlab_code/Starlink.tle
 /bash_scripts/new_files*
 Tool_Functions/get_file_name.m
