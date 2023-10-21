@@ -4,7 +4,7 @@ addpath ../Tool_Functions/;
 setParam;
 
 %% load filename
-mon = 9; day = 14; hr = 11; minu = 27;
+mon = 10; day = 11; hr = 22; minu = 21;
 sample_rate = 2e6;
 center_freq = 11.575e9;
 IQ_Sample_file = get_file_name(mon, day, hr, minu, center_freq, sample_rate);
@@ -59,7 +59,7 @@ while 1
     xlim([0,length(sig_fft_abs)])
     hold on;
     plot(sig_fft_abs);
-    ylim([0,20])
+    ylim([0,50])
     title(join([num2str(time), " ",num2str(peak2rms(sig_fft_abs))]));
     pause(0.1);
     clf;
