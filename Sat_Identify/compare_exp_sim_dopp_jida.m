@@ -43,5 +43,88 @@ for ii = 1:length(tracks_cell)
     track = tracks_cell{ii};
     t = track(:, 1);
     freq_track = track(:, 2);
-    plot(t, freq_track, LineWidth=2);
+    plot(t, freq_track, LineWidth=2.5);
 end
+
+%% compare with the simulated result
+% load simulated result
+close all;
+load("../Satellite_Sim/matlab_code/sat_struct.mat");
+num_sats = length(sat_struct);
+sat_candidates = [];
+% avoid low elevation & quick passing sats
+for idx = 1:num_sats
+    tt = sat_struct(idx).t;
+    sampleTime = tt(2)-tt(1);
+    dopp = sat_struct(idx).doppler;
+    el = sat_struct(idx).elevation;
+    ele_max = max(el);
+    if ele_max < 60
+        continue;
+    end
+    sat_struct(idx).doppler(el < 30) = NaN;
+    if ~isempty(find(~isnan(dopp)))
+        visible_duration = sum(~isnan(sat_struct(idx).doppler))*sampleTime;
+        if visible_duration >= 20
+            sat_candidates = [sat_candidates ; sat_struct(idx)];
+        end
+    end
+end
+hold on;
+for idx = 1:length(sat_candidates)
+    plot(sat_candidates(idx).t, sat_candidates(idx).doppler, ...
+        'DisplayName', sat_candidates(idx).name, 'LineStyle', '--');
+end
+legend
+for ii = 1:length(tracks_cell)
+    cfo(ii) = 0;
+    err = inf;
+    mostlikely_name = "";
+    track = tracks_cell{ii};
+    t = track(:, 1);
+    freq_track = track(:, 2);
+    % plot(t, freq_track, LineWidth=1);
+    for idx = 1:length(sat_candidates)
+        possible_sat = sat_candidates(idx);
+        t_sat = possible_sat.t;
+        t_idx = (t_sat >= t(1)) & (t_sat <= t(end));
+        dopp_sat = possible_sat.doppler;
+        dopp_sat = dopp_sat(t_idx);
+        % if sum(isnan(dopp_sat)) ~= 0
+        %     continue;
+        % end
+        is_nan = isnan(dopp_sat) | isnan(freq_track);
+        if sum(~is_nan) == 0
+            continue;
+        end
+        variance = var(freq_track(~is_nan) - dopp_sat(~is_nan));
+        if variance < err
+            err = variance;
+            cfo(ii) = mean(freq_track(~is_nan) - dopp_sat(~is_nan));
+            mostlikely_name = possible_sat.name;
+        end
+    end
+    plot(t, freq_track-cfo(ii), LineWidth=1.5, ...
+        DisplayName="(likely "+mostlikely_name+")");
+end
+% % interpolate the tracked tones
+% for ii = 1:length(tracks_cell)
+%     track = tracks_cell{ii};
+%     t = track(:, 1);
+%     freq_track = track(:, 2);
+%     is_nan = isnan(freq_track);
+%     t = t(~is_nan); freq_track = freq_track(~is_nan);
+%     poly_coeff = polyfit(t, freq_track, 4);
+%     % plot(t, freq_track, t, polyval(poly_coeff, t), '--');
+%     track(~is_nan, 2) = polyval(poly_coeff, t);
+%     tracks_cell{ii} = track;
+% end
+% hold on;
+% for ii = 1:length(tracks_cell)
+%     track = tracks_cell{ii};
+%     t = track(:, 1);
+%     freq_track = track(:, 2);
+%     poly_coeff = polyfit(t, freq_track, 3);
+%     track(:, 2) = polyval(poly_coeff, t);
+%     plot(t(2:end), diff(freq_track)/time_step, LineWidth=1);
+% end
