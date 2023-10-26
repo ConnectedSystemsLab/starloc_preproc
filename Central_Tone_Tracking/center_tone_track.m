@@ -68,9 +68,6 @@ while 1
     clf;
     idx = idx+move_by;
     time = time+move_by/sample_rate;
-    if time == 280
-        1
-    end
 end
 %% select one sat
 tt = []; dd = [];
@@ -92,11 +89,12 @@ figure;
 for i = 1:1:length(time_array)
     peak_idxes = find(peak_array(i,:));
     peak_idxes = peak_idxes(peak_idxes~=518);
-    scatter(time_array(i)*ones(1,length(peak_idxes)), peak_idxes, 'blue', 'filled');
+    % scatter(time_array(i)*ones(1,length(peak_idxes)), peak_idxes, 'blue', 'filled');
+    plot(time_array(i)*ones(1,length(peak_idxes)), peak_idxes, '.');
     hold on;
 end
 %% point-to-curve assignment plot (run python script to get output)
-load('output_tracks.mat')
+load('output_tracks.mat');
 field_Names = fieldnames(tracks_dict);
 for i=1:1:length(fieldNames)
 arr = tracks_dict.(fieldNames{i});
@@ -177,11 +175,10 @@ end
 %     
 % end
 %%
-figure;
+figure; hold on;
 struct_cell = struct2cell(tracks_dict);
 for i=1:1:length(struct_cell)
     scatter(struct_cell{i}(1:end,1), (struct_cell{i}(:,2)));
     title(i);
-    pause(0.5);
-    clf;
+    pause(0.2);
 end

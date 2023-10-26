@@ -19,7 +19,7 @@ mon = 9; day = 14;
 TLE = "tles/"+num2str(mon)+"_"+num2str(day)+"/Starlink.tle";
 % startTime = datetime("now") - hours(8);     % UTC time
 startTime = datetime(2023,9,14,11,27,5) + hours(5);     % UTC time
-duration = seconds(minutes(8));
+duration = seconds(minutes(6));
 stopTime = startTime + seconds(duration);
 sampleTime = .5;                             % s
 sc = satelliteScenario(startTime, stopTime, sampleTime);
@@ -46,27 +46,21 @@ numSamples = round(numSamples);
 c = physconst("Lightspeed");
 F_c = 11.575e9;
 
-%% add a waitbar to visualize the process
-
-% [az, el, ~] = aer(gs, sats);
-% elevation = el';
-% visible_num = sum(elevation>=minElevation, 2);
-% visible_idx = elevation>minElevation;
-% 
-% [~, satV] = states(sats, "CoordinateFrame", "geographic");
-% dir = zeros(3, size(el, 2), size(el, 1));
-% dir(1, :, :) = (cosd(el).*cosd(az))';
-% dir(2, :, :) = (cosd(el).*sind(az))';
-% dir(3, :, :) = (-sind(el))';
-% doppler = -squeeze(dot(satV, dir, 1))*F_c/c;
-% doppler(~visible_idx) = nan;
-
+%% simulate doppler, azimuth, elevation
 t = linspace(0, duration, numSamples+1);
-% doppler = dopplershift(gs, sats, Frequency=F_c);
-% [az, el, ~] = aer(gs, sats);
+doppler = dopplershift(gs, sats, Frequency=F_c);
+[az, el, ~] = aer(gs, sats);
 visible_idx = el>minElevation;
 fprintf('simulation done, %d mins used\n', round(toc/60));
 
+%% save simulation result as a struct
+for idx = 1:numSatellites
+    sat_struct(idx).doppler = doppler(idx, :).';
+    sat_struct(idx).azimuth = az(idx, :).';
+    sat_struct(idx).elevation = el(idx, :).';
+    sat_struct(idx).t = t.';
+    sat_struct(idx).name = sats(idx).Name;
+end
 %% figs
 
 figure(1);
@@ -90,21 +84,17 @@ xlabel('t/min');
 ylabel('visible satellite #');
 title("minElevation = " + num2str(minElevation) + " degrees");
 %% figs
-
+t = linspace(0, duration, numSamples+1);
 figure(2);
 hold on; grid on;
 for idx = 1:numSatellites
     if ~isempty(find(~isnan(dopp_2(idx, :))))
-        tt = find(~isnan(dopp_2(idx, :)));
-        if tt(1) < 500 || tt(1) > 550
-            continue;
-        end
         plot(t, dopp_2(idx, :), 'DisplayName', sats(idx).Name, 'LineStyle', '--');
     end
 end
 legend;
 %% figs
-
+t = linspace(0, duration, numSamples+1);
 figure(3);
 hold on; grid on;
 for idx = 1:numSatellites
