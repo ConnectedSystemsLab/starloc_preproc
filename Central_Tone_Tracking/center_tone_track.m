@@ -1,5 +1,6 @@
 %%
 clear all; close all; clc;
+addpath ../;
 addpath ../Tool_Functions/;
 setParam;
 
@@ -17,7 +18,7 @@ t_fft = n_fft/central_bw;
 num_read_samples = T_avg*sample_rate; %t_fft*sample_rate;
 
 idx = 1;
-figure;
+fig = figure;
 time = num_read_samples/sample_rate;
 move_by = num_read_samples/2;
 time_array = [];
@@ -25,7 +26,8 @@ peak_array = [];
 while 1
     sig = read_complex_binary2(IQ_Sample_file, num_read_samples, idx);
     if length(sig) ~= num_read_samples
-        fprintf("breaking")
+        fprintf("breaking\n");
+        close(fig);
         break;
     end
     
@@ -65,18 +67,33 @@ while 1
     clf;
     idx = idx+move_by;
     time = time+move_by/sample_rate;
-
+end
+%% select one sat
+tt = []; dd = [];
+for i = 1:1:length(time_array)
+    peak_idxes = find(peak_array(i,:));
+    peak_idxes = peak_idxes(peak_idxes~=518);
+    if time_array(i)<272.5 || time_array(i)>309.5
+        continue
+    end
+    if isempty(peak_idxes)
+        continue
+    end
+    tt = [tt ; time_array(i)];
+    [~,ii] = min(abs(peak_idxes-(-2.92*time_array(i)+1336)));
+    dd = [dd ; peak_idxes(ii)];
 end
 %%
 figure;
 for i = 1:1:length(time_array)
     peak_idxes = find(peak_array(i,:));
     peak_idxes = peak_idxes(peak_idxes~=518);
-    scatter(time_array(i)*ones(1,length(peak_idxes)), peak_idxes, 'blue', 'filled');
+    % scatter(time_array(i)*ones(1,length(peak_idxes)), peak_idxes, 'blue', 'filled');
+    plot(time_array(i)*ones(1,length(peak_idxes)), peak_idxes, '.');
     hold on;
 end
 %% point-to-curve assignment plot (run python script to get output)
-load('output_tracks.mat')
+load('output_tracks.mat');
 field_Names = fieldnames(tracks_dict);
 for i=1:1:length(fieldNames)
 arr = tracks_dict.(fieldNames{i});
@@ -157,11 +174,10 @@ end
 %     
 % end
 %%
-figure;
+figure; hold on;
 struct_cell = struct2cell(tracks_dict);
 for i=1:1:length(struct_cell)
     scatter(struct_cell{i}(1:end,1), (struct_cell{i}(:,2)));
     title(i);
-    pause(0.5);
-    clf;
+    pause(0.2);
 end
