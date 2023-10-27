@@ -4,10 +4,10 @@ addpath ../Tool_Functions/;
 setParam;
 
 %% load filename
-mon = 9; day = 14; hr = 11; minu = 27;
+mon = 10; day = 16; hr = 19; minu = 59;
 sample_rate = 2e6;
 center_freq = 11.575e9;
-IQ_Sample_file = get_file_name(mon, day, hr, minu, center_freq, sample_rate);
+IQ_Sample_file = get_file_name_new(mon, day, hr, minu, center_freq, sample_rate);
 %%
 f_hardware = 145642; % not needed
 central_bw = 1.024e6;
@@ -55,10 +55,10 @@ while 1
 %     plot((abs(fftshift(fft(sig)./sqrt(num_read_samples)))));
 %     ylim([0,0.05]);
 
-    scatter(peaks_idx, peaks, 'filled');
+    scatter(peaks_idx, 20*log10(peaks), 'filled');
     xlim([0,length(sig_fft_abs)])
     hold on;
-    plot(sig_fft_abs);
+    plot(20*log10(sig_fft_abs));
     ylim([0,20])
     title(join([num2str(time), " ",num2str(peak2rms(sig_fft_abs))]));
     pause(0.1);
