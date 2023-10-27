@@ -3,13 +3,15 @@ function [frame_begin_idx] = frame_detect_pss(file_path, sample_rate, if_visual)
 % input: the path of .dat file; sample_rate
 % output: the index of frames
 % note: only high sample rate will work (e.g., 100 MHz)
+% otherwise the correlation peak might not be observed
 
-fprintf("Detecting frames in %s\n", file_path);tic;
+fprintf("Detecting frames in %s\n", file_path);
+tic;
 addpath ../Tool_Functions/
 
-N = 1024+32;
-Fs = 240e6;
-t_read = 1e-2;
+N = 1024+32;                % FFT size + CP size
+Fs = 240e6;                 % transmit sample rate
+t_read = 1e-2;              % duration of each file read
 num_samples = t_read*sample_rate;
 frame_begin_idx = [];
 [pss, ~] = get_pss();
@@ -18,7 +20,9 @@ pss_resamp = resample(pss, sample_rate, 240e6);
 % noise estimation (assumes data begins with noise)
 noise = read_complex_binary2(file_path, num_samples, 1);
 % matched filter based detection
+% the correlation of a & b = the convolution of a and reverse(b)
 filter_kernal = conj(pss_resamp(end:-1:1));
+% z stores the filter's state
 z = zeros(length(filter_kernal)-1, 1);
 
 read_idx = 1;           % # of read times
@@ -30,7 +34,10 @@ while 1
     read_idx = read_idx+1;
     if ~find_frame
         read_idx = read_idx+20;
+        % if don't find anything, skip to speed up
+        % so that the noise can be skipped quickly
     end
+    % the index in the whole file
     file_idx = (read_idx-1)*num_samples+1;
 
     % [signal, is_end] = fread_complex(f, num_samples);
@@ -40,7 +47,8 @@ while 1
         % this means the end of the file
         break;
     end
-
+    
+    % do the correlation of raw data with pss
     [res, z] = filter(filter_kernal, 1, signal, z);
     idx_above_thresh = abs(res) > threshold;
     idx_above_thresh = find(idx_above_thresh);
@@ -81,6 +89,8 @@ while 1
         end
     else
         if find_frame
+            % if already find frame && don't find frame in the next 50 file
+            % reads, then stop finding frames and end the function
             if cnt < 50
                 cnt = cnt+1;
             else
@@ -89,6 +99,8 @@ while 1
         end
     end
 end
+
+% print result and save .mat file
 fprintf("Detect done in %d s, %d frames found in total\n", round(toc), length(frame_begin_idx));
 file_name = split(file_path, '/');
 file_name = file_name{end};

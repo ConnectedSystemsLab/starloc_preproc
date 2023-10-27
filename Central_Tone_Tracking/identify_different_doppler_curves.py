@@ -4,7 +4,9 @@ from scipy import io as sio
 from scipy.optimize import linear_sum_assignment
 import numpy as np
 
+# choose one when running
 peak_file_path = '/home/jidazhang/Desktop/starlink_ofdm/Central_Tone_Tracking/peak_arr_9_14_11_27_5.mat'
+# peak_file_path = "D:\\Desktop\study\\2023_summer\\starlink_ofdm\\Central_Tone_Tracking\\peak_arr_9_14_11_27_5.mat"
 peak_array = sio.loadmat(peak_file_path)['peak_array']
 
 
