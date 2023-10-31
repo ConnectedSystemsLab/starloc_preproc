@@ -12,6 +12,8 @@ theta = 50;         % elevation of signal source
 phi = 120;          % azimuth of signal source
 f = 1;              % incident signal freq
 d = 0.5;            % antenna spacing over wavelength ratio
+                    % d = 0.5 means half wavelength spacing 
+                    % d > 0.5 will cause ambiguity
 SNR = 10;
 K = 500;            % # of time samples
 t = linspace(0, 1, K);
@@ -29,7 +31,7 @@ S = X*X' / K;
 [V, DiagMat] = eig(S);
 % Step 2: decide number of signals D
 diag_vec = diag(DiagMat);
-D_hat = M - sum(diag_vec < mean(diag_vec) / 10);
+D_hat = M - sum(diag_vec < max(diag_vec) / 5);
 % Step 3: evaluate P versus theta, phi;
 E_N = V(:, 1:M-D_hat);
 theta_hat = [0:.5:90];
