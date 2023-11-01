@@ -21,7 +21,7 @@ siebel = wgs84.latlon(siebel_lat, siebel_lon)
 bagels = wgs84.latlon(+40.11398436467024, -88.22459037110089)
 gs =  siebel # change
 ts = load.timescale()
-t_start = t = ts.utc(2023, 9, 14, 11, 27, 5) # TODO: add 5 hours for UTC time BROOO!!!! utc time format #change 
+t_start = t = ts.utc(2023, 9, 14, 11, 27, 5) # TODO: add 5 hours for UTC time to CST time format  
 t_start = t = ts.utc(t_start.utc_datetime() + timedelta(hours=5)) 
 t_stop = ts.utc(2023, 9, 14, 11, 27+8, 5)# utc time format #change
 t_stop = ts.utc(t_stop.utc_datetime() + timedelta(hours=5)) 
