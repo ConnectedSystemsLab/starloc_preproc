@@ -3,7 +3,7 @@
 % Estimation, IEEE TRANSACTIONS ON ANTENNAS AND PROPAGATION, VOL. 
 % AP-34, NO. 3, MARCH 1986
 %% preparation of inputs
-clear all;
+% clear all;
 M_x = 2;            
 M_y = 2;
 M = M_x*M_y;        % # of antenna (assume uniform planar array)
@@ -34,8 +34,8 @@ diag_vec = diag(DiagMat);
 D_hat = M - sum(diag_vec < max(diag_vec) / 5);
 % Step 3: evaluate P versus theta, phi;
 E_N = V(:, 1:M-D_hat);
-theta_hat = [0:.5:90];
-phi_hat = [0:.5:360];
+theta_hat = [0:.1:90];
+phi_hat = [0:.1:360];
 P = zeros(length(theta_hat), length(phi_hat));
 for idx_1 = 1:length(theta_hat)
     for idx_2 = 1:length(phi_hat)
