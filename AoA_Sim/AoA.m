@@ -117,6 +117,7 @@ LNBs = groundStation(sc, "Name", 'uiuc', "Latitude", lat, ...
 % y_i[n] = A'*exp(j*2*pi*f*n*F_s)+n_i,
 % from where we start our simulation
 %% do the simulation again with higher sample rate
+num_LNBs = 4;
 F_s = 1e3;
 sc_new = satelliteScenario(startTime, stopTime, 1/F_s);
 sat = satellite(sc_new, 'tles/10_31/STARLINK-6150.tle');
