@@ -266,30 +266,27 @@ def aoa_music(x, steering_vector):
     return music_spec
 
 @njit(cache=True)
-def aoa_music_2d(x, M_x, M_y, d, lam):
+def aoa_music_2d(x, M_x, M_y, d, lam, theta_hat, phi_hat):
     x_ = x
     num_sample = x_.shape[1]
     num_ante = x_.shape[0]
     num_sig = 1
-    M = M_x*M_y
-    S = x_ @ np.conjugate(x_.T)/num_sample
+    S = cov_matrix(x_)
     eig_va, eig_ve = np.linalg.eigh(S)
     eigs_ve_sort = np.argsort(eig_va)[::-1]
     E_N = np.zeros((num_ante, num_ante - num_sig), dtype=np.complex64)
     for i in range(num_ante - num_sig):
-        E_N[:,i] = eig_ve[:,eigs_ve_sort[num_sig+i]]
-    theta_hat = np.arange(0, 90, 0.5)
-    phi_hat = np.arange(0, 360, 1)
+        E_N[:, i] = eig_ve[:, eigs_ve_sort[i+num_sig]]
     music_spec = np.zeros((len(theta_hat), len(phi_hat)), dtype=np.complex64)
     for i in range(len(theta_hat)):
         for j in range(len(phi_hat)):
             theta_ = theta_hat[i]
             phi_ = phi_hat[j]
-        
-            a_x = np.exp(-1j*2*np.pi*d/lam*np.arange(0, M_x, 1)*np.cos(np.deg2rad(theta_)*np.cos(np.deg2rad(phi_)))).T
-            a_y = np.exp(-1j*2*np.pi*d/lam*np.arange(0, M_y, 1)*np.cos(np.deg2rad(theta_)*np.sin(np.deg2rad(phi_)))).T
-            a = np.kron(a_x, a_y)
+            a_x = np.exp(-1j*2*np.pi*d/lam*np.arange(0, M_x, 1).astype(np.float32)*np.cos(np.deg2rad(theta_))*np.cos(np.deg2rad(phi_)))
+            a_y = np.exp(-1j*2*np.pi*d/lam*np.arange(0, M_y, 1).astype(np.float32)*np.cos(np.deg2rad(theta_))*np.sin(np.deg2rad(phi_)))
+            a = np.kron(a_x, a_y).astype(np.complex64)
             music_spec[i, j] = a.conj().T @ E_N @ E_N.conj().T @ a
+    music_spec = np.reciprocal(music_spec)
     return np.abs(music_spec)
 
 @njit(cache=True)
