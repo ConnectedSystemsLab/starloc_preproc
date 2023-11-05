@@ -4,7 +4,7 @@
 
 %% download TLE from celestrack
 today_date = datetime("today");
-mon = 10; day = 31;
+mon = today_date.Month; day = today_date.Day;
 TLE = "tles/"+num2str(mon)+"_"+num2str(day)+"/Starlink.tle";
 if ~exist("tles/"+num2str(mon)+"_"+num2str(day))
     mkdir("tles/"+num2str(mon)+"_"+num2str(day));
@@ -16,7 +16,7 @@ end
 %% Satellite & LNB setup
 
 % time setting
-startTime = datetime(2023, 10, 31, 0, 0, 0) + hours(5);     % UTC time
+startTime = datetime(2023, 11, 5, 0, 0, 0) + hours(5);     % UTC time
 duration = seconds(minutes(1));
 stopTime = startTime + seconds(duration);
 sampleTime = 1;                             % in second
@@ -60,21 +60,21 @@ LNBs = groundStation(sc, "Name", 'uiuc', "Latitude", lat, ...
 % Ran this and found that 4291-th satellite passes overhead. Uncomment it
 % to find out which satellite passes overhead
 
-% num_LNBs = 4; 
-% num_sats = length(sats); 
-% num_time_samples = duration/sampleTime+1;
-% [elevation, range] = deal(zeros(num_sats, num_time_samples, num_LNBs));
-% for ii = 1:num_LNBs
-%     [~, elevation(:,:,ii), range(:,:,ii)] = aer(LNBs(ii), sats);
-% end
+num_LNBs = 4; 
+num_sats = length(sats); 
+num_time_samples = duration/sampleTime+1;
+[elevation, range] = deal(zeros(num_sats, num_time_samples, num_LNBs));
+for ii = 1:num_LNBs
+    [~, elevation(:,:,ii), range(:,:,ii)] = aer(LNBs(ii), sats);
+end
 
-% tmp = elevation>minElevation;
-% visible_idx = tmp(:,:,1)&tmp(:,:,2)&tmp(:,:,3)&tmp(:,:,4);
-% for idx = 1:num_sats
-%     if sum(visible_idx(idx, :)) == length(visible_idx(idx,:))
-%         idx
-%     end
-% end
+tmp = elevation>minElevation;
+visible_idx = tmp(:,:,1)&tmp(:,:,2)&tmp(:,:,3)&tmp(:,:,4);
+for idx = 1:num_sats
+    if sum(visible_idx(idx, :)) == length(visible_idx(idx,:))
+        idx
+    end
+end
 
 % compute the phase difference
 % sat = sats(4291);
