@@ -282,9 +282,9 @@ def aoa_music_2d(x, M_x, M_y, d, lam, theta_hat, phi_hat):
         for j in range(len(phi_hat)):
             theta_ = theta_hat[i]
             phi_ = phi_hat[j]
-            a_x = np.exp(-1j*2*np.pi*d/lam*np.arange(0, M_x, 1).astype(np.float32)*np.cos(np.deg2rad(theta_))*np.cos(np.deg2rad(phi_)))
-            a_y = np.exp(-1j*2*np.pi*d/lam*np.arange(0, M_y, 1).astype(np.float32)*np.cos(np.deg2rad(theta_))*np.sin(np.deg2rad(phi_)))
-            a = np.kron(a_x, a_y).astype(np.complex64)
+            a_x = np.exp(1j*2*np.pi*d/lam*np.arange(0, M_x, 1).astype(np.float32)*np.cos(np.deg2rad(theta_))*np.cos(np.deg2rad(phi_)))
+            a_y = np.exp(1j*2*np.pi*d/lam*np.arange(0, M_y, 1).astype(np.float32)*np.cos(np.deg2rad(theta_))*np.sin(np.deg2rad(phi_)))
+            a = np.kron(a_y, a_x).astype(np.complex64)
             music_spec[i, j] = a.conj().T @ E_N @ E_N.conj().T @ a
     music_spec = np.reciprocal(music_spec)
     return np.abs(music_spec)
