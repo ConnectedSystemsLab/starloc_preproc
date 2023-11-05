@@ -72,7 +72,8 @@ tmp = elevation>minElevation;
 visible_idx = tmp(:,:,1)&tmp(:,:,2)&tmp(:,:,3)&tmp(:,:,4);
 for idx = 1:num_sats
     if sum(visible_idx(idx, :)) == length(visible_idx(idx,:))
-        idx
+        sats(idx).Name
+        break;
     end
 end
 
