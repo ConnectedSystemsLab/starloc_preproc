@@ -1,5 +1,14 @@
 # starlink_ofdm
 
+## Setup Python Environment
+This creates a conda environment named ```starloc``` and installs ```requirements.txt```.
+```bash
+conda env create -f env.yaml 
+conda activate starloc
+```
+
+## Directories
+
 - `Central_Tone_Tracking/`
   
 - `Satellite_Sim/`
