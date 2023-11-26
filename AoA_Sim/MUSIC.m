@@ -11,7 +11,7 @@ D = 1;              % # of signal source
 theta = 50;         % elevation of signal source
 phi = 120;          % azimuth of signal source
 f = 1;              % incident signal freq
-d = 0.5;            % antenna spacing over wavelength ratio
+d = 1.0;            % antenna spacing over wavelength ratio
                     % d = 0.5 means half wavelength spacing 
                     % d > 0.5 will cause ambiguity
 SNR = 10;
@@ -34,8 +34,8 @@ diag_vec = diag(DiagMat);
 D_hat = M - sum(diag_vec < max(diag_vec) / 5);
 % Step 3: evaluate P versus theta, phi;
 E_N = V(:, 1:M-D_hat);
-theta_hat = [0:.1:90];
-phi_hat = [0:.1:360];
+theta_hat = [0:.5:90];
+phi_hat = [0:1:360];
 P = zeros(length(theta_hat), length(phi_hat));
 for idx_1 = 1:length(theta_hat)
     for idx_2 = 1:length(phi_hat)

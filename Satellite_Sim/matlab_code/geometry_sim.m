@@ -1,0 +1,22 @@
+d = 1e-2;
+lambda = 2e-2;
+ant_0 = [0 0 0];
+ant_1 = [d 0 0];
+ant_2 = [0 d 0];
+az = 60;
+el = 30;
+R_0 = 5e5;
+target = [R_0*cosd(el)*cosd(az) R_0*cosd(el)*sind(az) R_0*sind(el)];
+R_1 = norm(target-ant_1);
+R_2 = norm(target-ant_2);
+
+del_phi_1 = -(R_0-R_1)/lambda*2*pi;
+del_phi_2 = -(R_0-R_2)/lambda*2*pi;
+target_proj = [R_0*cosd(el)*cosd(az) R_0*cosd(el)*sind(az) 0];
+d_0 = norm(target_proj-ant_0);
+d_1 = norm(target_proj-ant_1);
+d_2 = norm(target_proj-ant_2);
+phi = atand(del_phi_2/del_phi_1)
+phi = atand((d_0-d_2)/(d_0-d_1))
+% theta = acosd(-2*pi*d*cosd(phi)/lambda/del_phi_1)
+% theta = acosd(del_phi_1*lambda/2/pi/d/cosd(phi))
