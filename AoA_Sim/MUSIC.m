@@ -11,7 +11,7 @@ D = 1;              % # of signal source
 theta = 50;         % elevation of signal source
 phi = 120;          % azimuth of signal source
 f = 1;              % incident signal freq
-d = 1.0;            % antenna spacing over wavelength ratio
+d = 10;            % antenna spacing over wavelength ratio
                     % d = 0.5 means half wavelength spacing 
                     % d > 0.5 will cause ambiguity
 SNR = 10;
