@@ -140,15 +140,15 @@ def calc_distance(lat_1, lon_1, lat_2, lon_2):
 
 def visual_loc_result(estimated_longitude, estimated_latitude, lon, lat):
     # draw a 2d scatter figure with the estimated latitude and longitude
-    plt.rcParams['figure.dpi'] = 200
+    # plt.rcParams['figure.dpi'] = 200
     plt.plot(estimated_longitude, estimated_latitude, '.', label='estimated')
-    plt.plot(lon, lat, 'ro', label='ground truth')
+    # plt.plot(lon, lat, 'ro', label='ground truth')
     plt.xlabel('longitude (deg)')
     plt.ylabel('latitude (deg)')
     # plt.xlim(lon-0.1, lon+0.1)
     # plt.ylim(lat-0.1, lat+0.1)
-    plt.legend()
-    plt.show()
+    # plt.legend()
+    # plt.show()
 
     distance = calc_distance(np.mean(estimated_latitude), np.mean(estimated_longitude), lat, lon)
     print(f'Localization Error = {distance:.2f} meters')
