@@ -27,7 +27,7 @@ z = zeros(length(filter_kernal)-1, 1);
 
 read_idx = 1;           % # of read times
 % need to be adjusted
-threshold = 70*mean(abs(filter(filter_kernal, 1, noise)));
+threshold = 10*mean(abs(filter(filter_kernal, 1, noise)));
 find_frame = false;
 
 while 1

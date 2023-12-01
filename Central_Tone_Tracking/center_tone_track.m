@@ -3,9 +3,8 @@ clear all; close all; clc;
 addpath ../;
 addpath ../Tool_Functions/;
 setParam;
-
 %% load filename
-mon = 10; day = 16; hr = 19; minu = 59;
+mon = 11; day = 16; hr = 17; minu = 15;
 sample_rate = 2e6;
 center_freq = 11.575e9;
 IQ_Sample_file = get_file_name_new(mon, day, hr, minu, center_freq, sample_rate);
@@ -13,10 +12,9 @@ IQ_Sample_file = get_file_name_new(mon, day, hr, minu, center_freq, sample_rate)
 f_hardware = 145642; % not needed
 central_bw = 1.024e6;
 T_avg = 1;
-n_fft = 2^10;
+n_fft = 32768;
 t_fft = n_fft/central_bw;
 num_read_samples = T_avg*sample_rate; %t_fft*sample_rate;
-
 idx = 1;
 fig = figure;
 time = num_read_samples/sample_rate;
@@ -30,39 +28,41 @@ while 1
         close(fig);
         break;
     end
-    
     sig = resample(sig, central_bw, sample_rate);
-    [sig_fft_abs, f] = fft_avg(sig, central_bw, n_fft, f_hardware);
-    [max, midx] = maxk(sig_fft_abs, 20); % find 10 peaks - 9 tones and 1 constant hardware induced
-    mean_sig_amp = mean(sig_fft_abs);
-    peaks = [];
-    peaks_idx = [];
-    for i=1:1:length(max)
-        if max(i) > mean(sig_fft_abs)+2*std(sig_fft_abs) 
-            if i>1 && any((abs(midx(i)-midx(1:i-1)) < 5))
-                continue
-            end
-            peaks = [peaks max(i)];
-            peaks_idx = [peaks_idx midx(i)];
-        end
-    end
-    peak_subarray = zeros(1, n_fft);
-    peak_subarray(peaks_idx) = peaks;
-    time_array = [time_array; time];
-    peak_array = [peak_array; peak_subarray];
-    
-%     alpha = 2.5;
-%     opts = {'Window', gausswin(n_fft,alpha), 'FFTLength', n_fft};
-%     stft(sig, sample_rate, opts{:});
-%     plot((abs(fftshift(fft(sig)./sqrt(num_read_samples)))));
-%     ylim([0,0.05]);
-
-    scatter(peaks_idx, 20*log10(peaks), 'filled');
-    xlim([0,length(sig_fft_abs)])
-    hold on;
-    plot(20*log10(sig_fft_abs));
-    ylim([0,20])
-    title(join([num2str(time), " ",num2str(peak2rms(sig_fft_abs))]));
+    % sig_fft = fftshift(fft(sig))./n_fft;
+    sig_fft_reshape = reshape(sig, n_fft, []);
+    sig_fft = sum(fft(sig_fft_reshape), 2);
+%     [sig_fft_abs, f] = fft_avg(sig, central_bw, n_fft, f_hardware);
+%     [max, midx] = maxk(sig_fft_abs, 20); % find 10 peaks - 9 tones and 1 constant hardware induced
+%     mean_sig_amp = mean(sig_fft_abs);
+%     peaks = [];
+%     peaks_idx = [];
+%     for i=1:1:length(max)
+%         if max(i) > mean(sig_fft_abs)+2*std(sig_fft_abs)
+%             if i>1 && any((abs(midx(i)-midx(1:i-1)) < 5))
+%                 continue
+%             end
+%             peaks = [peaks max(i)];
+%             peaks_idx = [peaks_idx midx(i)];
+%         end
+%     end
+%     peak_subarray = zeros(1, n_fft);
+%     peak_subarray(peaks_idx) = peaks;
+%     time_array = [time_array; time];
+%     peak_array = [peak_array; peak_subarray];
+%
+% %     alpha = 2.5;
+% %     opts = {'Window', gausswin(n_fft,alpha), 'FFTLength', n_fft};
+% %     stft(sig, sample_rate, opts{:});
+% %     plot((abs(fftshift(fft(sig)./sqrt(num_read_samples)))));
+% %     ylim([0,0.05]);
+    % scatter(peaks_idx, 20*log10(peaks), 'filled');
+    % xlim([0,length(sig_fft_abs)])
+    % hold on;
+    % plot(20*log10(abs(sig_fft)));
+    % ylim([0,100])
+    % title(join([num2str(time), " ",num2str(peak2rms(sig_fft_abs))]));
+    plot(sig_fft);
     pause(0.1);
     clf;
     idx = idx+move_by;
@@ -120,7 +120,6 @@ for i=1:1:length(all_time_stamps)
         m = m+1;
     end
 end
-
 %%
 % get complete track points for all tracks
 tracks_cell = struct2cell(tracks_dict);
@@ -152,7 +151,7 @@ end
 % t_fft = n_fft/central_bw;
 % num_read_samples = t_fft*sample_rate;
 % % num_read_samples = T_avg*sample_rate;
-% ​
+%
 % idx = 1;
 % figure;
 % while idx <= pss_begin_idx(end)
@@ -161,7 +160,7 @@ end
 %         fprintf("breaking")
 %         break;
 %     end
-%     
+%
 %     sig = resample(sig, central_bw, sample_rate);
 %     [sig_fft_abs, f] = fft_avg(sig, central_bw, n_fft, f_hardware);
 %     % sig_fft = fftshift(fft(sig, n_fft))/n_fft;
@@ -171,7 +170,7 @@ end
 %     % xlim([6e4,7.5e4]);
 %     % ylim([0,100]);
 %     pause(0.1);
-%     
+%
 % end
 %%
 figure; hold on;
