@@ -29,16 +29,20 @@ while 1
         break;
     end
     sig = resample(sig, central_bw, sample_rate);
+    l = floor(length(sig)/n_fft);
+    sig_reshape = reshape(sig(1:n_fft*l),[n_fft,l]);
+    
     % sig_fft = fftshift(fft(sig))./n_fft;
-    sig_fft_reshape = reshape(sig, n_fft, []);
-    sig_fft = sum(fft(sig_fft_reshape), 2);
+    % sig_fft_reshape = reshape(sig, n_fft, []);
+    sig_fft = sum((fftshift(fft(sig_reshape))).^2, 2);
+    % fprintf('%f %f', n_fft*l, num_read_samples);
 %     [sig_fft_abs, f] = fft_avg(sig, central_bw, n_fft, f_hardware);
 %     [max, midx] = maxk(sig_fft_abs, 20); % find 10 peaks - 9 tones and 1 constant hardware induced
 %     mean_sig_amp = mean(sig_fft_abs);
 %     peaks = [];
 %     peaks_idx = [];
 %     for i=1:1:length(max)
-%         if max(i) > mean(sig_fft_abs)+2*std(sig_fft_abs)
+%         if max(i) > mean(sig_fft_abs)+2*std(sig_fft_abs) 
 %             if i>1 && any((abs(midx(i)-midx(1:i-1)) < 5))
 %                 continue
 %             end
@@ -68,6 +72,7 @@ while 1
     idx = idx+move_by;
     time = time+move_by/sample_rate;
 end
+
 %% select one sat
 tt = []; dd = [];
 for i = 1:1:length(time_array)
