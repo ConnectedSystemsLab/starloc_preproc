@@ -29,16 +29,20 @@ while 1
         break;
     end
     sig = resample(sig, central_bw, sample_rate);
+    l = floor(length(sig)/n_fft);
+    sig_reshape = reshape(sig(1:n_fft*l),[n_fft,l]);
+    
     % sig_fft = fftshift(fft(sig))./n_fft;
-    sig_fft_reshape = reshape(sig, n_fft, []);
-    sig_fft = sum(fft(sig_fft_reshape), 2);
+    % sig_fft_reshape = reshape(sig, n_fft, []);
+    sig_fft = sum((fftshift(fft(sig_reshape))).^2, 2);
+    % fprintf('%f %f', n_fft*l, num_read_samples);
 %     [sig_fft_abs, f] = fft_avg(sig, central_bw, n_fft, f_hardware);
 %     [max, midx] = maxk(sig_fft_abs, 20); % find 10 peaks - 9 tones and 1 constant hardware induced
 %     mean_sig_amp = mean(sig_fft_abs);
 %     peaks = [];
 %     peaks_idx = [];
 %     for i=1:1:length(max)
-%         if max(i) > mean(sig_fft_abs)+2*std(sig_fft_abs)
+%         if max(i) > mean(sig_fft_abs)+2*std(sig_fft_abs) 
 %             if i>1 && any((abs(midx(i)-midx(1:i-1)) < 5))
 %                 continue
 %             end
@@ -50,24 +54,39 @@ while 1
 %     peak_subarray(peaks_idx) = peaks;
 %     time_array = [time_array; time];
 %     peak_array = [peak_array; peak_subarray];
+<<<<<<< HEAD
 %
+=======
+% 
+>>>>>>> e3fd192 (trace driven aoa)
 % %     alpha = 2.5;
 % %     opts = {'Window', gausswin(n_fft,alpha), 'FFTLength', n_fft};
 % %     stft(sig, sample_rate, opts{:});
 % %     plot((abs(fftshift(fft(sig)./sqrt(num_read_samples)))));
 % %     ylim([0,0.05]);
+<<<<<<< HEAD
+=======
+
+>>>>>>> e3fd192 (trace driven aoa)
     % scatter(peaks_idx, 20*log10(peaks), 'filled');
     % xlim([0,length(sig_fft_abs)])
     % hold on;
     % plot(20*log10(abs(sig_fft)));
     % ylim([0,100])
     % title(join([num2str(time), " ",num2str(peak2rms(sig_fft_abs))]));
+<<<<<<< HEAD
     plot(sig_fft);
     pause(0.1);
+=======
+    plot(abs(sig_fft));
+    ylim([0,20])
+    pause(0.5);
+>>>>>>> e3fd192 (trace driven aoa)
     clf;
     idx = idx+move_by;
     time = time+move_by/sample_rate;
 end
+
 %% select one sat
 tt = []; dd = [];
 for i = 1:1:length(time_array)
