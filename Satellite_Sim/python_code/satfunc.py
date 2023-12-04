@@ -138,6 +138,23 @@ def calc_distance(lat_1, lon_1, lat_2, lon_2):
     
     return R*c_
 
+# calculate 2-D AoA based on formula
+# - input: 
+# delta_phi_1 : phase difference between rx0 & rx1, in radians
+# d_1 : antenna spacing between rx0 & rx1, in meters
+# lam : wavelength, in meters
+# - output:
+# az : azimuth angle, in degrees
+# el : elevation angle, in degrees
+def calc_aoa_formula(delta_phi_1, delta_phi_2, d_1, d_2, lam):
+    phi = np.arctan2(-1 * delta_phi_2 / d_2, -1 * delta_phi_1 / d_1)
+    phi = np.mod(phi, 2*np.pi)
+    az = 2*np.pi - phi
+    el = np.arccos(-delta_phi_1*lam/(2*np.pi*d_1*np.cos(az)))
+    az, el = np.rad2deg(az), np.rad2deg(el)
+
+    return az, el
+
 def visual_loc_result(estimated_longitude, estimated_latitude, lon, lat):
     # draw a 2d scatter figure with the estimated latitude and longitude
     # plt.rcParams['figure.dpi'] = 200
