@@ -30,11 +30,23 @@
   $$
   Taking the derivative gives the relationship between AoA error $d\theta$ and phase noise $d\delta \phi$:
   $$
-  d\theta = -\arcsin'\times\frac{1}{2\pi} \frac{\lambda}{d} d\delta \phi.
+  d\theta = -\arcsin'(y)|_{y=\frac{1}{2\pi} \frac{\lambda}{d} \delta \phi}\times\frac{1}{2\pi} \frac{\lambda}{d} d\delta \phi,
   $$
-  Here we take antenna spacing $d = 5\lambda$ (which is huge: Weapon to increase AoA acc) and assume that the incident signal is not very slanting, we suppose $|\arcsin'|\leq \pi$ so a coarse estimation is $d\theta \approx -\frac{1}{10}d\delta \phi$. **So the AoA error is proportional to phase noise,  in the case w/ LNB it's 0.1 times of phase noise.** 
+  since $\theta = -\arcsin(y)\Rightarrow y = -\sin \theta$, so
+  $$
+  \arcsin'(y)|_{y=\frac{1}{2\pi} \frac{\lambda}{d} \delta \phi} = \frac{1}{\sqrt{1-y^2}}|_{y=-\sin \theta} = \frac{1}{|\cos \theta|}.
+  $$
+  Here we take antenna spacing $d = 5\lambda$ (which is huge: Weapon to increase AoA acc) and refer to the fact that the incident signal cannot be very slanting, suppose $\theta\in[-60^\circ,60^\circ]$, so $\cos\theta > \frac{1}{2}$, thus $|\arcsin'|\leq 2 <\pi$. In this way, a coarse estimation is $d\theta \approx -\frac{1}{10}d\delta \phi$. **So the AoA error is proportional to phase noise,  in the case w/ LNB it's 0.1 times of phase noise.** 
 
   For case w/ LNB, std var of $\theta\approx 0.0135 \approx 0.8^\circ$. This can be further improved by increasing antenna spacing, but the tradeoff is more ambiguity.
+
+  - **why the incident signal cannot be very slanting**, $\theta\in[-60^\circ,60^\circ]$
+
+    There is a minimum elevation constraint.
+
+    <img src="img/aoa_2d.jpg" style="zoom:30%;" />
+
+    O, A, B are antennas and T is the satellite. C is the projection point of T on x-O-y plane, and $\ang COT$ is elevation. So for any line in x-O-y plane, its angle with OT is greater than elevation. Our antennas all lie in x-O-y plane, so for instance, $\alpha = \ang TOA > elevation$, so the AoA of the antenna pair O & A $\theta =90^\circ-\alpha < 90^\circ -elevation \leq 90^\circ -elevation_{min}$. Elevation cannot be too small otherwise the satellite is not observable, assuming $elevation_{min}=30^\circ$ makes sure that $\theta<60^\circ$.
 
 - AoA error caused by antenna spacing $d$
 
