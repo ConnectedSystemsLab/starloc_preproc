@@ -3,23 +3,23 @@ clear all; close all; clc;
 addpath ../;
 addpath ../Tool_Functions/;
 
-%% main
-sample_rate = 2e6;
-center_freq = 11.325e9;
-IQ_Sample_file = "D:\Desktop\study\2023_autumn\box\12_27\time_20_47_freq_11_325G_bw_2.0M_1703724657.2378652_inrx0.dat";
-[peak_array, time_array, central_bw, n_fft] = tone_track(IQ_Sample_file, sample_rate, 44200000, 1);
+% configure date manually
+date = '12_27';
+load(date+"/info.mat");
 
-%% plot the tracked freq bins
-% exclude the peak introduced by hardware
-f_bin_hardware = 513;
-figure;
-for i = 1:1:length(time_array)
-    peak_idxes = find(peak_array(i,:));
-    peak_idxes = peak_idxes(peak_idxes~=f_bin_hardware);
-    % scatter(time_array(i)*ones(1,length(peak_idxes)), peak_idxes, 'blue', 'filled');
-    plot(time_array(i)*ones(1,length(peak_idxes)), peak_idxes, '.');
-    hold on;
-end
+%% main
+% sample_rate = 2e6;
+IQ_Sample_file_1 = strrep(IQ_Sample_file_0,'rx0','rx1');
+IQ_Sample_file_2 = strrep(IQ_Sample_file_0,'rx0','rx2');
+
+[peak_array_0, time_array, central_bw, n_fft] = tone_track(IQ_Sample_file_0, sample_rate, loc_sig_idx, 0);
+
+[peak_array_1, time_array, central_bw, n_fft] = tone_track(IQ_Sample_file_1, sample_rate, loc_sig_idx, 0);
+
+[peak_array_2, time_array, central_bw, n_fft] = tone_track(IQ_Sample_file_2, sample_rate, loc_sig_idx, 0);
+
+save 12_27/peaks.mat peak_array_0 peak_array_1 peak_array_2 time_array central_bw n_fft;
+fprintf("results saved to 12_27/peaks.mat\n");
 
 %% center tone track function
 function [peak_array, time_array, central_bw, n_fft] = tone_track(IQ_Sample_file, sample_rate, noise_idx, if_visual)
@@ -33,7 +33,8 @@ num_read_samples = T_avg*sample_rate; %t_fft*sample_rate;
 
 idx = noise_idx;
 fig = figure;
-time = num_read_samples/sample_rate;
+% time = num_read_samples/sample_rate;
+time = 0;
 move_by = num_read_samples/2;
 time_array = [];
 peak_array = [];
@@ -52,7 +53,7 @@ while 1
     peaks = [];
     peaks_idx = [];
     for i=1:1:length(max)
-        if max(i) > mean(sig_fft_abs)+2*std(sig_fft_abs) 
+        if max(i) > mean(sig_fft_abs)+1.5*std(sig_fft_abs) 
             if i>1 && any((abs(midx(i)-midx(1:i-1)) < 5))
                 continue
             end
@@ -81,6 +82,6 @@ while 1
         clf;
     end
     idx = idx+move_by;
-    time = time+move_by/sample_rate;
+    time = time+move_by/sample_rate
 end
 end
