@@ -15,5 +15,6 @@ def read_dat_file(file_path, start_index=None, end_index=None):
         end_index = len(iq)
     
     iq = iq[start_index:end_index,0] + 1j*iq[start_index:end_index,1]
+    f.close()
 
     return iq

@@ -27,7 +27,7 @@ z = zeros(length(filter_kernal)-1, 1);
 
 read_idx = 1;           % # of read times
 % need to be adjusted
-threshold = 10*mean(abs(filter(filter_kernal, 1, noise)));
+threshold = 4*mean(abs(filter(filter_kernal, 1, noise)));
 find_frame = false;
 
 while 1
@@ -42,11 +42,12 @@ while 1
 
     % [signal, is_end] = fread_complex(f, num_samples);
     signal = read_complex_binary2(file_path, num_samples, file_idx);
-    signal = signal.*exp(j*2*pi*-85e3*[0:num_samples-1]'/sample_rate);
+    fprintf('%d \n', length(signal))
     if length(signal) ~= num_samples
         % this means the end of the file
         break;
     end
+    signal = signal.*exp(j*2*pi*-85e3*[0:num_samples-1]'/sample_rate);
     
     % do the correlation of raw data with pss
     [res, z] = filter(filter_kernal, 1, signal, z);
