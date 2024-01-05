@@ -8,8 +8,10 @@ mon = 10; day = 16; hr = 19; minu = 59;
 sample_rate = 2e6;
 center_freq = 11.575e9;
 IQ_Sample_file_base_name = get_file_name_new(mon, day, hr, minu, center_freq, sample_rate);
-rx0_file = replace(IQ_Sample_file_base_name, '.dat', '_rx0.dat');
-rx1_file = replace(IQ_Sample_file_base_name, '.dat', '_rx1.dat');
+% rx0_file = replace(IQ_Sample_file_base_name, '.dat', '_rx0.dat');
+% rx1_file = replace(IQ_Sample_file_base_name, '.dat', '_rx1.dat');
+rx0_file = '/home/ishani/LeoPNT/USRP_data/12_27/time_20_47_freq_11_325G_bw_2.0M_1703723111.7046282_inrx0.dat'
+rx1_file = '/home/ishani/LeoPNT/USRP_data/12_27/time_20_47_freq_11_325G_bw_2.0M_1703723111.7046282_inrx1.dat'
 
 %%
 f_hardware = 145642; % not needed
@@ -19,7 +21,7 @@ n_fft = 2^10;
 t_fft = n_fft/central_bw;
 num_read_samples = T_avg*sample_rate; %t_fft*sample_rate;
 
-idx = 160*num_read_samples;
+idx = num_read_samples;
 figure;
 time = num_read_samples/sample_rate;
 move_by = num_read_samples/2;
@@ -82,14 +84,16 @@ while 1
     time_array1 = [time_array1; time];
     peak_array1 = [peak_array1; peak_subarray1];
 
-    scatter(peaks_idx0, 10*log10(peaks0), 'filled');
+    plot(10*log10(sig_fft_abs0));
     hold on;
+
+    plot(10*log10(sig_fft_abs1));
+    scatter(peaks_idx0, 10*log10(peaks0), 'filled');
     scatter(peaks_idx1, 10*log10(peaks1), 'filled');
     xlim([0,length(sig_fft_abs0)])
-    plot(10*log10(sig_fft_abs0));
-    plot(10*log10(sig_fft_abs1));
+
     
-    ylim([0,30])
+    % ylim([0,30])
     title(join([num2str(time), " ",num2str(peak2rms(sig_fft_abs0))]));
     pause(0.1);
     clf;
