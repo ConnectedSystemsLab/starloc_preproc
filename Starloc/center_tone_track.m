@@ -1,11 +1,10 @@
 %%
-clear all; close all; clc;
+date_ = "1_8";
 addpath ../;
 addpath ../Tool_Functions/;
-
+% fprintf(date+"/info.mat")
 % configure date manually
-date = '12_27';
-load(date+"/info.mat");
+load(date_+"/info.mat");
 
 %% main
 % sample_rate = 2e6;
@@ -18,8 +17,8 @@ IQ_Sample_file_2 = strrep(IQ_Sample_file_0,'rx0','rx2');
 
 [peak_array_2, time_array, central_bw, n_fft] = tone_track(IQ_Sample_file_2, sample_rate, loc_sig_idx, 0);
 
-save 12_27/peaks.mat peak_array_0 peak_array_1 peak_array_2 time_array central_bw n_fft;
-fprintf("results saved to 12_27/peaks.mat\n");
+save(date_+"/peaks.mat", "peak_array_0", "peak_array_1", "peak_array_2", "time_array", "central_bw", "n_fft");
+fprintf("results saved to "+date_+"/peaks.mat\n");
 
 %% center tone track function
 function [peak_array, time_array, central_bw, n_fft] = tone_track(IQ_Sample_file, sample_rate, noise_idx, if_visual)
@@ -53,7 +52,7 @@ while 1
     peaks = [];
     peaks_idx = [];
     for i=1:1:length(max)
-        if max(i) > mean(sig_fft_abs)+1.5*std(sig_fft_abs) 
+        if max(i) > mean(sig_fft_abs)+2*std(sig_fft_abs) 
             if i>1 && any((abs(midx(i)-midx(1:i-1)) < 5))
                 continue
             end
