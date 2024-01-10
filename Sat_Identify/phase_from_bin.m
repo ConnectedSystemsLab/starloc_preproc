@@ -4,12 +4,12 @@ f_0 = "/home/ishani/LeoPNT/USRP_data/12_27/time_20_47_freq_11_325G_bw_2.0M_17037
 f_1 = strrep(f_0,'rx0','rx1');
 f_2 = strrep(f_0,'rx0','rx2');
 %% 
-load("../Starloc/12_27/output_tracks.mat")
+% load("../Starloc/1_8/output_tracks.mat")
 % look at the first lnb
-tracks_dict = tracks_dict{1};
-track = tracks_dict.track_112;
+% tracks_dict = tracks_dict{1};
+track = tracks_dict.track_6;
 sample_rate = 2e6;
-noise_idx = 44200000;
+noise_idx = 0;
 noise_t = noise_idx/sample_rate;
 t_list = track(:,1);
 freq_bin_list = track(:,2);
@@ -27,10 +27,10 @@ for idx = 1:length(t_list)
     sig_2 = resample(sig_2, central_bw, sample_rate);
     subplot(3,1,1);
     plot(db(fft_avg(sig_0,sample_rate,1024,0)));
-    xlim([1 1024]); ylim([20 35]);xline(freq_bin);
+    xlim([1 1024]); ylim([10 25]);xline(freq_bin);
     subplot(3,1,2);
     plot(db(fft_avg(sig_1,sample_rate,1024,0)));
-    xlim([1 1024]); ylim([20 35]);xline(freq_bin);
+    xlim([1 1024]); ylim([10 25]);xline(freq_bin);
     subplot(3,1,3);
     plot(db(fft_avg(sig_2,sample_rate,1024,0)));
     xlim([1 1024]); ylim([30 45]);xline(freq_bin);
