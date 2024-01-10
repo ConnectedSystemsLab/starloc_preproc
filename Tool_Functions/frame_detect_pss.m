@@ -18,16 +18,16 @@ frame_begin_idx = [];
 pss_resamp = resample(pss, sample_rate, 240e6);
 
 % noise estimation (assumes data begins with noise)
-noise = read_complex_binary2(file_path, num_samples, 1);
+noise = read_complex_binary2(file_path, num_samples, 1e8);
 % matched filter based detection
 % the correlation of a & b = the convolution of a and reverse(b)
 filter_kernal = conj(pss_resamp(end:-1:1));
 % z stores the filter's state
 z = zeros(length(filter_kernal)-1, 1);
 
-read_idx = 1;           % # of read times
+read_idx = 1e3;           % # of read times
 % need to be adjusted
-threshold = 4*mean(abs(filter(filter_kernal, 1, noise)));
+threshold = 10*mean(abs(filter(filter_kernal, 1, noise)));
 find_frame = false;
 
 while 1
@@ -42,12 +42,12 @@ while 1
 
     % [signal, is_end] = fread_complex(f, num_samples);
     signal = read_complex_binary2(file_path, num_samples, file_idx);
-    fprintf('%d \n', length(signal))
+    % fprintf('%d \n', length(signal))
     if length(signal) ~= num_samples
         % this means the end of the file
         break;
     end
-    signal = signal.*exp(j*2*pi*-85e3*[0:num_samples-1]'/sample_rate);
+    % signal = signal.*exp(j*2*pi*-85e3*[0:num_samples-1]'/sample_rate);
     
     % do the correlation of raw data with pss
     [res, z] = filter(filter_kernal, 1, signal, z);
@@ -77,7 +77,7 @@ while 1
         idx_above_thresh = nonzeros(tmp) - ceil(sample_rate/Fs*N);
         frame_begin_idx = [frame_begin_idx; ...
             idx_above_thresh+(read_idx-1)*num_samples];
-        
+        idx_above_thresh+(read_idx-1)*num_samples
         if if_visual
         % for visualize & debug
             subplot(2, 1, 1);
@@ -89,15 +89,15 @@ while 1
             pause(.1);
         end
     else
-        if find_frame
-            % if already find frame && don't find frame in the next 50 file
-            % reads, then stop finding frames and end the function
-            if cnt < 50
-                cnt = cnt+1;
-            else
-                break;
-            end
-        end
+        % if find_frame
+        %     % if already find frame && don't find frame in the next 50 file
+        %     % reads, then stop finding frames and end the function
+        %     if cnt < 50
+        %         cnt = cnt+1;
+        %     else
+        %         break;
+        %     end
+        % end
     end
 end
 
