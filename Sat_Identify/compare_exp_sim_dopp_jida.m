@@ -2,7 +2,8 @@
 % make sure the running path is "Sat_Identify/"
 
 %% load tracks identified from exp data
-load('../Central_Tone_Tracking/output_tracks_2.mat');
+% load('../Central_Tone_Tracking/output_tracks_2.mat');
+load('../../box/12_27/output_tracks.mat');
 tracks_cell_pre = struct2cell(tracks_dict);
 num_tracks_pre = length(tracks_cell_pre);
 tracks_cell = {};
@@ -12,7 +13,7 @@ for ii = 1:num_tracks_pre
     track = tracks_cell_pre{ii};
     num_points = size(track, 1);
     % discard short tracks
-    if time_step*num_points < 10
+    if time_step*num_points < 6
         continue;
     end
 
