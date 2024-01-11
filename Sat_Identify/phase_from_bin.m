@@ -1,66 +1,116 @@
 addpath ../Tool_Functions/;
 %% file
-f_0 = "/home/ishani/LeoPNT/USRP_data/12_27/time_20_47_freq_11_325G_bw_2.0M_1703724657.2378652_inrx0.dat";
+f_0 = "D:\Desktop\study\2023_autumn\box\1_8\time_17_5_25_freq_11_325G_bw_2.0M_inrx0.dat";
 f_1 = strrep(f_0,'rx0','rx1');
 f_2 = strrep(f_0,'rx0','rx2');
-%% 
-% load("../Starloc/1_8/output_tracks.mat")
-% look at the first lnb
-% tracks_dict = tracks_dict{1};
-track = tracks_dict.track_6;
 sample_rate = 2e6;
-noise_idx = 0;
-noise_t = noise_idx/sample_rate;
-t_list = track(:,1);
-freq_bin_list = track(:,2);
-central_bw = 1.024e6;
-del_phi = zeros(2,length(t_list));
-for idx = 1:length(t_list)
-    t = t_list(idx);
-    freq_bin = freq_bin_list(idx);
-    start_idx = t*sample_rate+noise_idx;
-    sig_0 = read_complex_binary2(f_0, sample_rate, start_idx);
-    sig_0 = resample(sig_0, central_bw, sample_rate);
-    sig_1 = read_complex_binary2(f_1, sample_rate, start_idx);
-    sig_1 = resample(sig_1, central_bw, sample_rate);
-    sig_2 = read_complex_binary2(f_2, sample_rate, start_idx);
-    sig_2 = resample(sig_2, central_bw, sample_rate);
-    subplot(3,1,1);
-    plot(db(fft_avg(sig_0,sample_rate,1024,0)));
-    xlim([1 1024]); ylim([10 25]);xline(freq_bin);
-    subplot(3,1,2);
-    plot(db(fft_avg(sig_1,sample_rate,1024,0)));
-    xlim([1 1024]); ylim([10 25]);xline(freq_bin);
-    subplot(3,1,3);
-    plot(db(fft_avg(sig_2,sample_rate,1024,0)));
-    xlim([1 1024]); ylim([30 45]);xline(freq_bin);
-    title(num2str((t+idx)))
-    pause(0.2);
-    
-    ph_0 = fft_phase_avg(sig_0, sample_rate, 1024, freq_bin);
-    ph_1 = fft_phase_avg(sig_1, sample_rate, 1024, freq_bin);
-    ph_2 = fft_phase_avg(sig_2, sample_rate, 1024, freq_bin);
-    del_phi(:, idx) = [ph_0-ph_1;ph_0-ph_2];
+%% track doppler
+res = [];
+num_read_samples = 14e-3*sample_rate;
+f = linspace(-sample_rate/2, sample_rate/2, num_read_samples);
+start_idx = (120)*sample_rate;
+thresh = 3;
+if_visual = 0;
+while start_idx < (120+40)*sample_rate
+    sig_0 = read_complex_binary2(f_0, num_read_samples, start_idx);
+    sig_1 = read_complex_binary2(f_1, num_read_samples, start_idx);
+    start_idx = start_idx+num_read_samples;
+    sig_0_fft = fftshift(fft(sig_0));
+    sig_1_fft = fftshift(fft(sig_1));
+    sig_0_fft_abs = abs(sig_0_fft);
+    sig_1_fft_abs = abs(sig_1_fft);
+    pw_avg_0 = mean(sig_0_fft_abs);
+    pw_avg_1 = mean(sig_1_fft_abs);
+    idx_0 = sig_0_fft_abs>thresh*pw_avg_0;
+    idx_1 = sig_1_fft_abs>thresh*pw_avg_1;
+    idx_com = intersect(find(idx_0), find(idx_1));
+    t = start_idx/sample_rate;
+    for ii = 1:length(idx_com)
+        idx_com_ii = idx_com(ii);
+        res = [res ; [t idx_com_ii sig_0_fft(idx_com_ii) sig_1_fft(idx_com_ii)]];
+    end
+    if if_visual
+        subplot(2,1,1); hold on; title(num2str(t));
+        plot(f,sig_0_fft_abs); scatter(f(idx_com),sig_0_fft_abs(idx_com)); xlim([-600e3 600e3]); ylim([0 10*pw_avg_0]);
+        subplot(2,1,2); hold on;
+        plot(f,sig_1_fft_abs); scatter(f(idx_com),sig_1_fft_abs(idx_com)); xlim([-600e3 600e3]); ylim([0 10*pw_avg_1]);
+        pause(.01);
+        clf;
+    end
 end
 
-function [phi, f] = fft_phase_avg(sig, bw, n_fft, freq_bin)
-% calculates the average spectrum power
-% length(sig) = multiple of n_fft
-
-l = length(sig);
-if mod(l, n_fft) ~= 0
-    % error('length of signal should be multiple of fft points');
-    sig = sig(1:end-mod(l, n_fft));
-    l = length(sig);
+%% track & connect
+num_points = size(res, 1);
+tracks = {};
+for ii = 1:num_points
+    pnt_curr = res(ii,:); t_curr = pnt_curr(1); f_bin_cur = pnt_curr(2);
+    if_assigned = false;
+    for jj = 1:length(tracks)
+        cur_track = tracks{jj};
+        last_track_point = cur_track(end,:);
+        t_last = last_track_point(1);
+        f_bin_last = last_track_point(2);
+        if abs(t_curr-t_last)<14e-3*15 && abs(f_bin_cur-f_bin_last)<15
+            if_assigned = true;
+            tracks{jj} = [tracks{jj} ; pnt_curr];
+            break;
+        end
+    end
+    if ~if_assigned
+        tracks{length(tracks)+1} = pnt_curr;
+    end
 end
-
-f = linspace(-bw/2, bw/2, n_fft);
-f_bin = f(2)-f(1);
-signal_reshape = reshape(sig, [n_fft l/n_fft]);
-signal_reshape_fft = fftshift(fft(signal_reshape, n_fft, 1), 1);
-ph = angle(signal_reshape_fft);
-phi = phase_avg(ph(freq_bin,:));
-% sig_fft = sum(abs(signal_reshape_fft).^2, 2);
-% sig_fft(abs(f-f_hardware)<2*f_bin) = mean(sig_fft(abs(f-f_hardware)<2*f_bin));
-
+% find the longest & polyfit it
+max_l = 0; max_idx = 0;
+for jj = 1:length(tracks)
+    tmp = tracks{jj};
+    if size(tmp,1) > max_l
+        max_l = size(tmp,1);
+        max_idx = jj;
+    end
 end
+%% pick up others
+track_main = tracks{max_idx};
+a = polyfit(track_main(:,1), track_main(:,2), 3);
+dopp_track = [];
+bin_freq = sample_rate/num_read_samples;
+bin_spacing = round(44e3/bin_freq);
+for ii = 1:num_points
+    pnt_curr = res(ii,:); t_curr = pnt_curr(1); f_bin_cur = pnt_curr(2);
+    f_bin_tar = polyval(a,t_curr)+[-8:8]*bin_spacing;
+    dis = f_bin_cur-f_bin_tar;
+    if min(abs(dis)) < 5
+        dopp_track = [dopp_track ; res(ii,:)];
+    end
+end
+res(:,2) = f(res(:,2));
+dopp_track(:,2) = f(dopp_track(:,2));
+%% plot doppler bin
+figure(1);
+plot(dopp_track(:,1), dopp_track(:,2), '.');
+%% plot delta_phi
+figure(2);
+plot(dopp_track(:,1), angle(dopp_track(:,3))-angle(dopp_track(:,4)), '.')
+ylim([-pi pi]);
+%% process delta_phi
+t_repeat = dopp_track(:,1);
+del_phi_repeat = unwrap(angle(dopp_track(:,3))-angle(dopp_track(:,4)));
+t = unique(t_repeat);
+del_phi = zeros(length(t),1);
+for idx = 1:length(t)
+    t_now = t(idx);
+    ii = find(t_repeat==t_now);
+    % del_phi(idx) = mean(del_phi_repeat(ii));
+    del_phi(idx) = sum(abs(dopp_track(ii,3:4)),2)'*del_phi_repeat(ii) / sum(abs(dopp_track(ii,3:4)),'all'); % weighed mean
+    angle(dopp_track(ii,3))
+    angle(dopp_track(ii,4))
+end
+%% doppler sim
+fn = fieldnames(sat_dopp_dict);
+figure;hold on;
+for idx = 1:length(fn)
+    name = fn{idx};
+    sim_data = getfield(sat_dopp_dict, name);
+    plot(t_list, sim_data(2,:), '--', DisplayName=name);
+end
+legend
