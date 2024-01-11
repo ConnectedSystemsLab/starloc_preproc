@@ -111,77 +111,32 @@ def connect_doppler(date):
     return track_dicts
 
 def doppler_sim(date, path, fc, t_start, t_stop, t_step):
-    min_ele = 40 # degrees
+    min_ele = 60 # degrees
     satellites = load.tle_file(path) # either use path to tle or directly fetch latest tle from the url
     print("number of Starlink satellites loaded " + str(len(satellites)))
     open_satfile_list = []
     siebel_lat, siebel_lon = (+40.11389690596162, -88.22484814695467)
     siebel = wgs84.latlon(siebel_lat, siebel_lon) 
     gs =  siebel
-    ts = load.timescale()
+
     # convert from timestamp to datetime
     d_1 = datetime.fromtimestamp(t_start)
-    # t_start = ts.utc(d_1.year, d_1.month, d_1.day, d_1.hour, d_1.minute, d_1.second)
     t_start = datetime(d_1.year, d_1.month, d_1.day, d_1.hour, d_1.minute, d_1.second, tzinfo=pytz.UTC)
     d_2 = datetime.fromtimestamp(t_stop)
-    # t_stop = ts.utc(d_2.year, d_2.month, d_2.day, d_2.hour, d_2.minute, d_2.second)
     t_stop = datetime(d_2.year, d_2.month, d_2.day, d_2.hour, d_2.minute, d_2.second, tzinfo=pytz.UTC)
 
     sat_dopp_dict = {}
     sat_cnt = 0
     for satellite in satellites:
         sat_cnt += 1
-        print(sat_cnt)
         name = satellite.name
-        t_list, sat_dopp_dict[name] = calc_doppler(satellite, gs, t_start, t_stop, 1/t_step, fc, min_ele)
-    print(sat_dopp_dict)
+        # print sat_cnt and its name
+        print(sat_cnt,name)
+        is_visible, t_list, dopp, az, el = calc_doppler(satellite, gs, t_start, t_stop, 1/t_step, fc, min_ele)
+        if is_visible:
+            sat_dopp_dict[name] = np.vstack((dopp, az, el))
+
     return sat_dopp_dict, t_list
-    # sec_into_sim = -0.5
-    # while True:
-    #     sec_into_sim = sec_into_sim + t_step
-        
-    #     for satellite in satellites:
-
-    #         dist = (satellite-gs).at(t)
-    #         alt, az, distance = dist.altaz() 
-    #         if alt.degrees > min_ele:
-
-    #             _, _, the_range, _, _, range_rate = dist.frame_latlon_and_rates(gs)
-
-    #             doppler_shift = fc*range_rate.m_per_s/c
-    #             f = str(satellite.name)+".csv"
-            
-    #             if f in open_satfile_list:
-    #                 with open(os.path.join(results_folder,f),mode='a') as sat_file:
-    #                     row = str(t.utc_datetime()) + "," + str(wgs84.subpoint(satellite.at(t)).latitude) + "," + str(wgs84.subpoint(satellite.at(t)).longitude) + "," + str(alt.degrees) + "," + str(az.degrees) + "," + array2string(the_range.km, precision=10) + "," + array2string(range_rate.km_per_s, precision=10) + "," + str(doppler_shift) + "\n"
-    #                     sat_file.write(row)
-    #                 sat_dopp_dict["S_"+str(satellite.name).split("-")[1]].append([sec_into_sim, doppler_shift])
-    #                 # print(str(satellite.name).split("-")[1], range_rate.km_per_s, the_range.km)
-                    
-    #                 # sat_file.close()
-    #             else:
-    #                 with open(os.path.join(results_folder,f),mode='w') as sat_file:
-    #                     header = "Time" + "," + "Sat Lat" + "," + "Sat Lon" + "," + "Sat Elev" + "," + "Sat Az" + "," + "Dist/Range" + "," + "Range Rate (km/s)" + "," + "Doppler Shift (Hz)" + "\n"
-    #                     row = str(t.utc_datetime()) + "," + str(wgs84.subpoint(satellite.at(t)).latitude) + "," + str(wgs84.subpoint(satellite.at(t)).longitude) + "," + str(alt.degrees) + "," + str(az.degrees) + "," + array2string(the_range.km, precision=10) + "," + array2string(range_rate.km_per_s, precision=10) + "," + str(doppler_shift) + "\n"
-    #                     sat_file.write(header)
-    #                     sat_file.write(row)
-    #                     open_satfile_list.append(f)
-    #                 sat_dopp_dict["S_"+str(satellite.name).split("-")[1]] = []   
-    #                 sat_dopp_dict["S_"+str(satellite.name).split("-")[1]].append([sec_into_sim, doppler_shift])
-    #                 # sat_file.close()
-    #         else:
-    #             continue    
-                
-    #     # update t
-
-    #     t = ts.utc(t.utc_datetime() + timedelta(seconds=t_step)) 
-    #     print(str(t.utc_datetime()), str(t_stop.utc_datetime()))
-    #     if t.utc_datetime() >= t_stop.utc_datetime():
-    #         break
-
-    # sat_dopp_file = "./sat_dopp_dict_.mat"
-    
-    # sio.savemat(sat_dopp_file, {'sat_dopp_dict': sat_dopp_dict})
 
 # Calculate doppler shift given satellite, ground station, start time, stop time, sampling frequency, and carrier frequency
 def calc_doppler(sat, gs, start_time, stop_time, fs, fc, min_ele):
@@ -191,17 +146,22 @@ def calc_doppler(sat, gs, start_time, stop_time, fs, fc, min_ele):
     duration = stop_time-start_time
     n_list = np.arange(0, fs*duration.total_seconds(), 1).astype(int)
     doppler_shift = np.empty(len(n_list))
+    azimuth = np.empty(len(n_list))
+    elevation = np.empty(len(n_list))
 
+    sat_ele_max = -inf
     for n in n_list:
         dist = (sat-gs).at(t)
         t = ts.utc(t.utc_datetime()+timedelta(milliseconds=1000/fs))
         alt, az, distance = dist.altaz() 
-        if alt.degrees < min_ele:
-            doppler_shift[n] = np.nan
-            continue
+        if alt.degrees > sat_ele_max:
+            sat_ele_max = alt.degrees
         _, _, the_range, _, _, range_rate = dist.frame_latlon_and_rates(gs)
         doppler_shift[n] = -fc*range_rate.km_per_s*1000/c
+        azimuth[n] = az.degrees
+        elevation[n] = alt.degrees
         
     t_list = n_list/fs
+    is_visible = sat_ele_max > min_ele
 
-    return t_list, doppler_shift
+    return is_visible, t_list, doppler_shift, azimuth, elevation
