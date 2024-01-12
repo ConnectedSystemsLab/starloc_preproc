@@ -47,7 +47,7 @@ while start_idx < (120+40)*sample_rate
 end
 %% split different satellites
 period_starts = [90 130 170 210 255 310 540 780 910];
-period_ends = [120 150 210 255 310 333 620 830 960];
+period_ends = [120 150 210 255 310 333 580 830 960];
 num_periods = length(period_starts);
 res_ = {};
 for ii = 1:num_periods
@@ -101,7 +101,6 @@ end
 track_main = tracks{max_idx};
 a = polyfit(track_main(:,1), track_main(:,2), 1);
 dopp_track = [];
-dopp_track_agg = [];
 bin_freq = sample_rate/num_read_samples;
 bin_spacing = round(44e3/bin_freq);
 for ii = 1:num_points
@@ -124,33 +123,86 @@ for sat_id = 1:num_periods
     dopp_track = dopp_track_dict{sat_id};
     plot(dopp_track(:,1), dopp_track(:,2), '.');
 end
+xlabel('t / s'); ylabel('f_d / Hz'); title('Tracked central tones');
 %% plot delta_phi
 figure(2);
 for sat_id = 1:num_periods
+    subplot(3,3,sat_id)
     dopp_track = dopp_track_dict{sat_id};
     hold on;
     plot(dopp_track(:,1), angle(dopp_track(:,3))-angle(dopp_track(:,4)), '.')
     plot(dopp_track(:,1), angle(dopp_track(:,3))-angle(dopp_track(:,5)), '.')
+    title("Sat #"+num2str(sat_id))
     % ylim([-pi pi]);
-    clf;
+    % clf;
 end
+%% ID
+% id_dict{}
 %% process delta_phi
+sat_good = 7;
+dopp_track = dopp_track_dict{sat_good};
 t_repeat = dopp_track(:,1);
-del_phi_repeat = unwrap(angle(dopp_track(:,3))-angle(dopp_track(:,4)));
+del_phi_repeat_01 = unwrap(angle(dopp_track(:,3))-angle(dopp_track(:,4)));
+del_phi_repeat_02 = unwrap(angle(dopp_track(:,3))-angle(dopp_track(:,5)));
+coeff_01 = polyfit(t_repeat, del_phi_repeat_01, 2);
+coeff_02 = polyfit(t_repeat, del_phi_repeat_02, 2);
 t = unique(t_repeat);
-del_phi = zeros(length(t),1);
+del_phi_01 = zeros(length(t),1);
+del_phi_02 = zeros(length(t),1);
 for idx = 1:length(t)
     t_now = t(idx);
     ii = find(t_repeat==t_now);
-    % del_phi(idx) = mean(del_phi_repeat(ii));
-    del_phi(idx) = sum(abs(dopp_track(ii,3:4)),2)'*del_phi_repeat(ii) / sum(abs(dopp_track(ii,3:4)),'all'); % weighed mean
-    angle(dopp_track(ii,3))
-    angle(dopp_track(ii,4))
+    del_phi_01(idx) = sum(abs(dopp_track(ii,3:4)).^2,2)'*del_phi_repeat_01(ii) / sum(abs(dopp_track(ii,3:4)).^2,'all'); % weighed mean
+    del_phi_02(idx) = sum(abs(dopp_track(ii,[3 5])).^2,2)'*del_phi_repeat_02(ii) / sum(abs(dopp_track(ii,[3 5])).^2,'all');
 end
+% compare with gt
+load ../../box/1_10/output_doppler.mat
+sat_sim_fn = fieldnames(sat_dopp_dict);
+name = id_dict{sat_good};
+if sat_good == 7
+    name = "STARLINK-30966";
+elseif sat_good == 1
+    name = "STARLINK-6365";
+elseif sat_good == 4
+    name = "STARLINK-5784";
+elseif sat_good == 9
+    name = "STARLINK-5598";
+end
+sat_dopp = getfield(sat_dopp_dict, name);
+dopp_track = dopp_track_dict{sat_good};
+t = unique(dopp_track(:,1));
+t_sim = t_list(t_list>t(1)&t_list<t(end));
+az_gt = sat_dopp(2,:)'; az_gt = az_gt(t_list>t(1)&t_list<t(end));
+el_gt = sat_dopp(3,:)'; el_gt = el_gt(t_list>t(1)&t_list<t(end));
+r = 1e10;
+d = 13.25e-2;
+% az_gt = az_gt-1;
+phi = 360-az_gt; theta = el_gt;
+lambda = 3e8/11.325e9;
+loc_3d = r*[cosd(theta).*cosd(phi) cosd(theta).*sind(phi) sind(theta)];
+range_0 = vecnorm((loc_3d-[0 0 0])');
+range_1 = vecnorm((loc_3d-[d 0 0])');
+range_2 = vecnorm((loc_3d-[0 -d 0])');
+del_phi_01_gt = -(range_0-range_1)/lambda*2*pi;
+del_phi_02_gt = -(range_0-range_2)/lambda*2*pi;
+
+phase_offset_01 = -2.6259220015834757;
+phase_offset_02 = -3.0204142063436374;
+% plot
+figure;hold on
+plot(t_repeat,del_phi_repeat_01-phase_offset_01-2*pi, '.')
+plot(t_repeat,del_phi_repeat_02-phase_offset_02, '.')
+plot(t_sim, del_phi_01_gt,  LineWidth=3)
+plot(t_sim, del_phi_02_gt,  LineWidth=3)
+title('Sat # 4')
+legend("angle(rx0/rx1) - real","angle(rx0/rx2) - real","angle(rx0/rx1) - simulated","angle(rx0/rx2) - simulated")
+legend
+% plot(t,polyval(coeff_01, t)-phase_offset_01)
+% plot(t,polyval(coeff_02, t)-phase_offset_02)
+
 %% doppler sim & identify
 load ../../box/1_10/output_doppler.mat
 sat_sim_fn = fieldnames(sat_dopp_dict);
-
 for sat_id = 1:num_periods
     dopp_main = dopp_track_main_dict{sat_id};
     dopp_main(:,2) = f(dopp_main(:,2));
@@ -166,6 +218,7 @@ for sat_id = 1:num_periods
 end
 %% id
 id_dict = {};
+% sat_good_7 should be "STARLINK-30966";
 freq_offset = zeros(num_periods, 1);
 for sat_id = 1:num_periods
     min_var = inf;
