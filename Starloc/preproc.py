@@ -25,25 +25,25 @@ def preproc(iq0_path, sample_rate):
 
     ref_frame_cnt -= 5
     start_idx = len_frame
-    phase_offset_12, phase_offset_02 = np.zeros(ref_frame_cnt), np.zeros(ref_frame_cnt)
+    phase_offset_01, phase_offset_02 = np.zeros(ref_frame_cnt), np.zeros(ref_frame_cnt)
     for i in range(ref_frame_cnt):
         iq0 = read_dat_file(iq0_path, len_frame, start_idx)
         iq1 = read_dat_file(iq1_path, len_frame, start_idx)
         iq2 = read_dat_file(iq2_path, len_frame, start_idx)
         start_idx += len_frame
-        phase_offset_12[i] = np.mean(np.unwrap(np.angle(iq1/iq2)))
+        phase_offset_01[i] = np.mean(np.unwrap(np.angle(iq0/iq1)))
         phase_offset_02[i] = np.mean(np.unwrap(np.angle(iq0/iq2)))
 
     # avoid jump
-    if np.max(phase_offset_02) - np.min(phase_offset_02) > 2*np.pi:
-        phase_offset_02[phase_offset_02 < 0] += 2*np.pi
+    # if np.max(phase_offset_02) - np.min(phase_offset_02) > 2*np.pi:
+    #     phase_offset_02[phase_offset_02 < 0] += 2*np.pi
         
-    plt.plot(phase_offset_12, label='angle(iq1/iq2)')
+    plt.plot(phase_offset_01, label='angle(iq0/iq1)')
     plt.plot(phase_offset_02, label='angle(iq0/iq2)')
     plt.title('phase offset from ref signal')
     plt.legend()
-    phase_offset_12_mean = np.mean(phase_offset_12)
+    phase_offset_01_mean = np.mean(phase_offset_01)
     phase_offset_02_mean = np.mean(phase_offset_02)
     # phase_offset_12_mean, phase_offset_02_mean
     print('The ref signal ends at index {}'.format(noise_idx))
-    return noise_idx
+    return noise_idx, phase_offset_01_mean, phase_offset_02_mean
