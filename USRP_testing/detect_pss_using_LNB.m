@@ -1,10 +1,10 @@
 addpath ../Tool_Functions/;
 
 % load file
-IQ_Sample_file = '/media/ishani/WD_BLACK/Ishani/usrp_data 2/8_22/time_10_59_freq_11_575G_bw_100.0M.dat'
+IQ_Sample_file = '/home/ishani/LeoPNT/USRP_data/1_5/time_15_00_freq_11_575G_bw_25.0M_1704488444.0657296_inrx0.dat'
 center_freq = 11.575e9;
-sample_rate = 100e6;
-desired_sample_rate = 8e6;
+sample_rate = 25e6;
+desired_sample_rate = 25e6;
 if_visual = 1;
 
 N = 1024+32;                % FFT size + CP size
@@ -17,6 +17,8 @@ pss_resamp = resample(pss, desired_sample_rate, 240e6);
 
 % noise estimation (assumes data begins with noise)
 noise = read_complex_binary2(IQ_Sample_file, num_samples, 1);
+% figure;
+% plot(noise)
 % matched filter based detection
 % the correlation of a & b = the convolution of a and reverse(b)
 filter_kernal = conj(pss_resamp(end:-1:1));
@@ -25,16 +27,16 @@ z = zeros(length(filter_kernal)-1, 1);
 
 read_idx = 1;           % # of read times
 % need to be adjusted
-threshold = 1.5*mean(abs(filter(filter_kernal, 1, noise)));
+threshold = 5*mean(abs(filter(filter_kernal, 1, noise)));
 find_frame = false;
 
 while 1
     read_idx = read_idx+1;
-    if ~find_frame
-        read_idx = read_idx+20;
-        % if don't find anything, skip to speed up
-        % so that the noise can be skipped quickly
-    end
+    % if ~find_frame
+    %     read_idx = read_idx+20;
+    %     % if don't find anything, skip to speed up
+    %     % so that the noise can be skipped quickly
+    % end
     % the index in the whole file
     file_idx = (read_idx-1)*num_samples+1;
 
@@ -47,7 +49,11 @@ while 1
     end
     signal = resample(signal, desired_sample_rate,sample_rate);
     num_samples_ = length(signal);
-    signal = signal.*exp(j*2*pi*-85e3*[0:num_samples_-1]'/desired_sample_rate);
+    % signal = signal.*exp(j*2*pi*-85e3*[0:num_samples_-1]'/desired_sample_rate);
+    % plot(real(signal));
+    % ylim([0,2])
+    % pause(.1);
+    % 
     
     % do the correlation of raw data with pss
     [res, z] = filter(filter_kernal, 1, signal, z);
@@ -78,15 +84,17 @@ while 1
         % fprintf('%f\n', idx_above_thresh)
         frame_begin_idx = [frame_begin_idx; ...
             ceil(idx_above_thresh/desired_sample_rate*sample_rate+(read_idx-1)*num_samples)];
-        
+
         if if_visual
         % for visualize & debug
             subplot(2, 1, 1);
             plot(mag2db(abs(signal)));
             xline(idx_above_thresh);
+            ylim([-50,5])
             subplot(2, 1, 2);
             plot(mag2dB(abs(res)));
             yline(mag2dB(threshold))
+            ylim([-20,12])
             pause(.1);
         end
     else
