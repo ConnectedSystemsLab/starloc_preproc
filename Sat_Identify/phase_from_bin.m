@@ -1,6 +1,7 @@
 addpath ../Tool_Functions/;
 %% file
-f_0 = "D:\Desktop\study\2023_autumn\box\1_8\time_17_5_25_freq_11_325G_bw_2.0M_inrx0.dat";
+% f_0 = "D:\Desktop\study\2023_autumn\box\1_8\time_17_5_25_freq_11_325G_bw_2.0M_inrx0.dat";
+f_0 = "/home/ishani/LeoPNT/USRP_data/1_10/time_20_44_freq_11_325G_bw_2.0M_1704943526.988162_inrx0.dat";
 f_1 = strrep(f_0,'rx0','rx1');
 f_2 = strrep(f_0,'rx0','rx2');
 sample_rate = 2e6;
@@ -8,26 +9,35 @@ sample_rate = 2e6;
 res = [];
 num_read_samples = 14e-3*sample_rate;
 f = linspace(-sample_rate/2, sample_rate/2, num_read_samples);
-start_idx = (120)*sample_rate;
-thresh = 3;
+noise_idx = 58200000;
+start_idx = (0)*sample_rate+noise_idx;
+
+thresh = 2.5;
 if_visual = 0;
-while start_idx < (120+40)*sample_rate
+while start_idx < (0+1050)*sample_rate+noise_idx
     sig_0 = read_complex_binary2(f_0, num_read_samples, start_idx);
     sig_1 = read_complex_binary2(f_1, num_read_samples, start_idx);
+    sig_2 = read_complex_binary2(f_2, num_read_samples, start_idx);
     start_idx = start_idx+num_read_samples;
+
     sig_0_fft = fftshift(fft(sig_0));
     sig_1_fft = fftshift(fft(sig_1));
+    sig_2_fft = fftshift(fft(sig_2));
     sig_0_fft_abs = abs(sig_0_fft);
     sig_1_fft_abs = abs(sig_1_fft);
+    sig_2_fft_abs = abs(sig_2_fft);
+
     pw_avg_0 = mean(sig_0_fft_abs);
     pw_avg_1 = mean(sig_1_fft_abs);
+    pw_avg_2 = mean(sig_2_fft_abs);
     idx_0 = sig_0_fft_abs>thresh*pw_avg_0;
     idx_1 = sig_1_fft_abs>thresh*pw_avg_1;
-    idx_com = intersect(find(idx_0), find(idx_1));
-    t = start_idx/sample_rate;
+    idx_2 = sig_2_fft_abs>thresh*pw_avg_2;
+    idx_com = intersect(intersect(find(idx_0), find(idx_1)), find(idx_2));
+    t = (start_idx-num_read_samples/2-noise_idx)/sample_rate
     for ii = 1:length(idx_com)
         idx_com_ii = idx_com(ii);
-        res = [res ; [t idx_com_ii sig_0_fft(idx_com_ii) sig_1_fft(idx_com_ii)]];
+        res = [res ; [t idx_com_ii sig_0_fft(idx_com_ii) sig_1_fft(idx_com_ii) sig_2_fft(idx_com_ii)]];
     end
     if if_visual
         subplot(2,1,1); hold on; title(num2str(t));
@@ -38,7 +48,8 @@ while start_idx < (120+40)*sample_rate
         clf;
     end
 end
-
+save('res.mat','res');
+quit (0,"force");
 %% track & connect
 num_points = size(res, 1);
 tracks = {};
