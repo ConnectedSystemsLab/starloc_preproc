@@ -13,3 +13,5 @@ OFDM_LAB/
 resamp_test.m
 __pycache__/
 have_a_look.ipynb
+*.ipynb_checkpoints/
+tmp
