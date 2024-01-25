@@ -57,8 +57,8 @@ def calc_AoA_2(del_phi_01, del_phi_02, d_01, d_02, lam, phase_offset_01, phase_o
 
     to reuse the previous code, here 1 means direction 0-2, 2 means direction 1-2
     """
-    phi_bound_1 = d_01/lam*2*np.pi
-    phi_bound_2 = d_02/lam*2*np.pi
+    phi_bound_1 = d_01/lam*2*np.pi*np.sin(np.deg2rad(20))
+    phi_bound_2 = d_02/lam*2*np.pi*np.sin(np.deg2rad(20))
     num_ambiguity_1 = np.ceil(phi_bound_1/(np.pi)).astype(int)
     num_ambiguity_2 = np.ceil(phi_bound_2/(np.pi)).astype(int)
     phi_bias_1 = np.zeros((num_ambiguity_1, 1))

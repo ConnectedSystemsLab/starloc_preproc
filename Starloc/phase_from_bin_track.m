@@ -1,34 +1,29 @@
 addpath ../Tool_Functions/;
+% change this to the date you want to process
+date_ = "1_21/";
+load(date_+"/info.mat");
 %% file
-% f_0 = "D:\Desktop\study\2023_autumn\box\1_8\time_17_5_25_freq_11_325G_bw_2.0M_inrx0.dat";
-f_0 = "/home/ishani/LeoPNT/USRP_data/1_10/time_20_44_freq_11_325G_bw_2.0M_1704943526.988162_inrx0.dat";
+f_0 = IQ_Sample_file_0;
 f_1 = strrep(f_0,'rx0','rx1');
 f_2 = strrep(f_0,'rx0','rx2');
-sample_rate = 2e6;
+% sample_rate = 2e6;
 num_read_samples = 14e-3*sample_rate;
 f = linspace(-sample_rate/2, sample_rate/2, num_read_samples);
-% noise_idx = 58200000;
-% start_idx = (0)*sample_rate+noise_idx;
+noise_idx = loc_sig_idx;
 
-% thresh = 2.5;
-t_start = 0;
-load ../../box/1_10/res.mat
-%% filter out wideband sig & have a look at res
-f_bin = res(:,2);
-res = res(f_bin < 2e4 & f_bin > 0.9e4,:);
-clear f_bin;
-plot(res(:,1),res(:,2),'.');
 %% track doppler
 res = [];
-start_idx = (120)*sample_rate;
+start_idx = 1;
 thresh = 3;
 if_visual = 0;
-while start_idx < (0+1050)*sample_rate+noise_idx
+while start_idx < t_end*sample_rate
     sig_0 = read_complex_binary2(f_0, num_read_samples, start_idx);
     sig_1 = read_complex_binary2(f_1, num_read_samples, start_idx);
     sig_2 = read_complex_binary2(f_2, num_read_samples, start_idx);
     start_idx = start_idx+num_read_samples;
-
+    if start_idx < noise_idx
+        continue;
+    end
     sig_0_fft = fftshift(fft(sig_0));
     sig_1_fft = fftshift(fft(sig_1));
     sig_2_fft = fftshift(fft(sig_2));
@@ -42,8 +37,11 @@ while start_idx < (0+1050)*sample_rate+noise_idx
     idx_0 = sig_0_fft_abs>thresh*pw_avg_0;
     idx_1 = sig_1_fft_abs>thresh*pw_avg_1;
     idx_2 = sig_2_fft_abs>thresh*pw_avg_2;
+    if length(find(idx_0)) > 300 || length(find(idx_1)) > 300 || length(find(idx_2)) > 300
+        continue;
+    end
     idx_com = intersect(intersect(find(idx_0), find(idx_1)), find(idx_2));
-    t = (start_idx-num_read_samples/2-noise_idx)/sample_rate
+    t = (start_idx-num_read_samples/2)/sample_rate
     for ii = 1:length(idx_com)
         idx_com_ii = idx_com(ii);
         res = [res ; [t idx_com_ii sig_0_fft(idx_com_ii) sig_1_fft(idx_com_ii) sig_2_fft(idx_com_ii)]];
@@ -57,7 +55,7 @@ while start_idx < (0+1050)*sample_rate+noise_idx
         clf;
     end
 end
-save('res.mat','res');
+save(date_+'res.mat','res');
 quit (0,"force");
 %% track & connect
 dopp_track_dict = {};
