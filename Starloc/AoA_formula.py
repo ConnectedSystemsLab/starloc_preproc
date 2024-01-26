@@ -124,8 +124,8 @@ def calc_AoA_2(del_phi_01, del_phi_02, d_01, d_02, lam, phase_offset_01, phase_o
             del_phi_2_j = pattern_2 + phi_bias_2[j]
             phi_ = np.arctan2(-del_phi_2_j/d_2, -del_phi_1_i/d_1)
             phi_ = np.mod(phi_, 2*np.pi)
-            # az_ = 2*np.pi-phi_
-            az_ = phi_
+            az_ = 2*np.pi-phi_
+            # az_ = phi_
             # elevation
             el_ = np.arccos(-del_phi_1_i*lam/(2*np.pi*d_1*np.cos(az_)))
             az[i*len(phi_bias_2)+j, :] = az_
