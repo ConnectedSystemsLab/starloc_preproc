@@ -1,17 +1,23 @@
 %%%%%%%%%% PART 1: doppler tracking and satellite splitting %%%%%%%%%%%%%%%
-% first specify the date here,
+% first specify the date here, make sure that res.mat is saved to this
+% folder (also for id doppler, simulation results needed), make sure the
+% root directory is Starloc/
+date = "1_21/";
 % have a look at original tracks
 addpath ../Tool_Functions/;
 sample_rate = 2e6;
 num_read_samples = 14e-3*sample_rate;
 f = linspace(-sample_rate/2, sample_rate/2, num_read_samples);
-load ../../box/1_21/res_1.mat
+load(date+"res.mat");
 % filter out wideband sig & have a look at res
 f_bin = res(:,2);
 res = res(f_bin < 2e4 & f_bin > 0.9e4,:);
 clear f_bin;
 plot(res(:,1),res(:,2),'.');
-%% split different satellites, need to specify when does a satellite appear and end
+%% split different satellites
+% need to specify when does a satellite appear and end, intervals can
+% overlap
+% 1_10
 % period_starts = [90 130 170 210 255 310 540 780 910];
 % period_ends = [120 150 210 255 310 333 580 810 960];
 % 1_21-1
@@ -166,7 +172,7 @@ id_dict{4} = "STARLINK-6245";
 
 %% doppler sim & identify
 % first load the doppler from date folder
-load ../../box/1_21/output_doppler_1.mat
+load(date+"output_doppler.mat");
 sat_sim_fn = fieldnames(sat_dopp_dict);
 for sat_id = 1:num_periods
     dopp_main = dopp_track_main_dict{sat_id};
@@ -209,6 +215,11 @@ for sat_id = 1:num_periods
     end
 end
 %% plot id result
+% results saved to variable "id_dict", can also see its name in the figure
+% window
+% since there are too many satellites, click on "edit plot" in the figure
+% window tool bar and right click the simulated dashed curve and "open
+% property inspector" to see its name
 figure;hold on;
 for idx = 1:length(sat_sim_fn)
     name = sat_sim_fn{idx};
