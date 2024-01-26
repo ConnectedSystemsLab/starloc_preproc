@@ -111,19 +111,27 @@ def connect_doppler(date):
     return track_dicts
 
 def doppler_sim(date, path, fc, t_start, t_stop, t_step):
-    min_ele = 60 # degrees
+    min_ele = 50 # degrees
     satellites = load.tle_file(path) # either use path to tle or directly fetch latest tle from the url
     print("number of Starlink satellites loaded " + str(len(satellites)))
     open_satfile_list = []
     siebel_lat, siebel_lon = (+40.11389690596162, -88.22484814695467)
     siebel = wgs84.latlon(siebel_lat, siebel_lon) 
-    gs =  siebel
+    farm_lat, farm_lon = (+40.072969193609126, -88.20958051030674)
+    farm = wgs84.latlon(farm_lat, farm_lon, elevation_m=218)
+    # gs =  siebel
+    gs = farm
 
     # convert from timestamp to datetime
+    # add five hours to convert from CST to UTC
+    t_start += 6*3600
+    t_stop += 6*3600
     d_1 = datetime.fromtimestamp(t_start)
     t_start = datetime(d_1.year, d_1.month, d_1.day, d_1.hour, d_1.minute, d_1.second, tzinfo=pytz.UTC)
+
     d_2 = datetime.fromtimestamp(t_stop)
     t_stop = datetime(d_2.year, d_2.month, d_2.day, d_2.hour, d_2.minute, d_2.second, tzinfo=pytz.UTC)
+
 
     sat_dopp_dict = {}
     sat_cnt = 0
@@ -158,6 +166,8 @@ def calc_doppler(sat, gs, start_time, stop_time, fs, fc, min_ele):
             sat_ele_max = alt.degrees
         _, _, the_range, _, _, range_rate = dist.frame_latlon_and_rates(gs)
         doppler_shift[n] = -fc*range_rate.km_per_s*1000/c
+        if alt.degrees < min_ele-10:
+            doppler_shift[n] = np.nan
         azimuth[n] = az.degrees
         elevation[n] = alt.degrees
         

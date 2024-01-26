@@ -4,8 +4,9 @@ USRP_testing/ofdm_analysis
 USRP_testing/spectrograms
 *.csv
 *.php
-*.mat
+*.mat   
 *.dat
+*.tle
 Satellite_Sim/matlab_code/Starlink.tle
 /bash_scripts/new_files*
 Tool_Functions/get_file_name.m
@@ -13,3 +14,4 @@ OFDM_LAB/
 resamp_test.m
 __pycache__/
 have_a_look.ipynb
+indoor_aoa.m

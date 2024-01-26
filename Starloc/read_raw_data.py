@@ -8,7 +8,12 @@ def read_dat_file(file_path, count=None, start_index=None):
         count = np.inf
 
     f = open(file_path, 'rb')
-    f.seek(4 * 2 * start_index, 0)
+    try:
+        f.seek(4 * 2 * start_index, 0)
+    except:
+        print('start_index out of bound')
+        return np.array([])
+    
     data = np.fromfile(f, dtype=np.float32, count=2 * count)
     f.close()
     
