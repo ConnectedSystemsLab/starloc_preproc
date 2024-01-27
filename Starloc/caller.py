@@ -1,6 +1,6 @@
-from utils import get_centertoneidx
+from starlink_ofdm.Starloc.utils.center_tone import get_centertoneidx
 
-def call_centerton():
+def call_centertone_idx():
     path = '/home/ishani/LeoPNT/USRP_data/1_21/time_23_5_freq_11_325G_bw_2.0M_1705900406.6641364_inrx0.dat'
     sample_rate = 2e6
     start_idx = int(131400000)
