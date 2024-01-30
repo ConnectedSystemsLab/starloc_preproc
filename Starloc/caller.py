@@ -1,13 +1,20 @@
-from starlink_ofdm.Starloc.utils.center_tone import get_centertoneidx
+from utils.center_tone import get_centertoneidx
+from utils.center_tone import get_centertone_tracks
 
 def call_centertone_idx():
-    path = '/home/ishani/LeoPNT/USRP_data/1_21/time_23_5_freq_11_325G_bw_2.0M_1705900406.6641364_inrx0.dat'
+    path = '/Users/ishani/Downloads/FirefoxDownloads/time_14_1_freq_11_325G_bw_2.0M_1706062245.5353017_inrx0.dat'
     sample_rate = 2e6
     start_idx = int(131400000)
     num_samples_per_step = int(0.014*sample_rate)
     print(num_samples_per_step)
     num_read_samples = 10000000
     center_tone_idx = get_centertoneidx(path, start_idx, num_samples_per_step, sample_rate, nfft=num_samples_per_step)
+def read_pickle(file_path):
+    import pickle
+    with open(file_path, 'rb') as f:
+        data = pickle.load(f)
+        print(data)
+    return 0
 
 def check_ref():
     import numpy as np
@@ -41,5 +48,6 @@ def check_ref():
     return 0
 
 if __name__ == "__main__":
-    check_ref()
+    # call_centertone_idx()
+    get_centertone_tracks('./center_tone_dict.pkl', [165, 250, 480],  [205, 300, 540], 2e6)
     # call_centerton()
