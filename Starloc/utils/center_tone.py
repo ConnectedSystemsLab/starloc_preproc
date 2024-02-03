@@ -1,7 +1,6 @@
 from os import read
 from random import sample
 import time
-from networkx import center
 from numpy import *
 from read_raw_data import read_dat_file
 from matplotlib import pyplot as plt
@@ -60,7 +59,7 @@ def get_centertoneidx(file_path, start_idx, num_samples_per_step, sample_rate, t
         if len(common_elements) > 0:    
             t = (curr_idx-num_samples_per_step/2)/sample_rate
             # add common elements to result array
-            res[str(curr_idx)] = {"t":t, "com_idx":common_elements, "iq0_fft":fft_iq0[common_elements], "iq1_fft":fft_iq1[common_elements], "iq2_fft":fft_abs_iq2[common_elements]}
+            res[str(curr_idx)] = {"t":t, "com_idx":common_elements, "iq0_fft":fft_iq0[common_elements], "iq1_fft":fft_iq1[common_elements], "iq2_fft":fft_iq2[common_elements]}
             # TODO: also append to array so it can be saved as mat file
         # ax.plot(iq0_fft_abs)
         # ax.plot(iq1_fft_abs)
@@ -87,7 +86,7 @@ def get_centertoneidx(file_path, start_idx, num_samples_per_step, sample_rate, t
             print("File saved as center_tone_dict.pkl")
             #TODO also save this as mat file
     # also save this as mat file
-    print("read all samples", time.time()-start_time)
+    print("read all samples in", time.time()-start_time, "seconds")
     
     return 0
 
@@ -103,31 +102,33 @@ def get_centertone_tracks(center_tone_dict, start_index_arr, stop_index_arr, sam
     # read center_tone_dict from file
     with open(center_tone_dict, 'rb') as f:
         center_tone_dict = pickle.load(f)
-    print(center_tone_dict)
+    # print(center_tone_dict)
     # first separate out center tones based on start and stop periods
     center_tone_tracks = {} # holds all center tones between each start and stop periods
     for i in range(len(start_index_arr)):
-        start_period = start_index_arr[i]/sample_rate
-        stop_period = stop_index_arr[i]/sample_rate
+        if str(i) not in center_tone_tracks:
+            center_tone_tracks[str(i)] = []
+        start_period = start_index_arr[i]
+        stop_period = stop_index_arr[i]
         for key in center_tone_dict:
-            if center_tone_dict[key]['t'] >= start_period and center_tone_dict[key]['t'] <= stop_period: # inclusive of start and stop periods
-                center_tone_tracks[str(i)] = center_tone_dict[key]
+            if float(center_tone_dict[key]['t']) >= start_period and float(center_tone_dict[key]['t']) <= stop_period: # inclusive of start and stop periods
+                #convert center_tone_dict[key] to array
+                for k in range(len(center_tone_dict[key]['com_idx'])):
+                    center_tone_arr = [center_tone_dict[key]['t'], center_tone_dict[key]['com_idx'][k], center_tone_dict[key]['iq0_fft'][k], center_tone_dict[key]['iq1_fft'][k], center_tone_dict[key]['iq2_fft'][k]]
+                    # Append the value to the list
+                    center_tone_tracks[str(i)].append(center_tone_arr)
     
     # now that we have an idea of center tones at each time step, we can track the center tones
     # for each centertone within a start and stop period, create a separate track. If there are 9 centertones, there should ideally be 9 tracks
-    print(center_tone_tracks)
     dopp_track_dict = {}
     for sat_num in range(len(start_index_arr)):
         points = center_tone_tracks[str(sat_num)]
-        print(points)
-        break
-        # num_points = len(points)
-        # # assign each point to a track
-        # sat_tone_tracks = {}
-        # for point in points:
-        #     time = point['t']
-        #     freq = point['']
-
-
-    
+        # print("Sat ", sat_num,"point are:", points,"\n\n")
+        num_points = len(points)
+        print("Sat: ", sat_num, "num points:", num_points)
+        # assign each point to a track
+        tone_tracks = {}
+        for point in points:
+            time = points[0]
+            freq_bin = points[1]
 

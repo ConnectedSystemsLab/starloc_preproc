@@ -51,6 +51,7 @@ def get_reference_signal_indexes(file_path, center_freq_rx, sample_rate, tx_freq
         else:
             if stop_index is not None and start_index is not None:
                 no_sig_count = no_sig_count + 1
+                # break if no ref signal is found for 2 consecutive reads and the start and stop indexes have already been found
                 if no_sig_count > 2:
                     break   
         idx += num_read_samples

@@ -2,13 +2,13 @@ from utils.center_tone import get_centertoneidx
 from utils.center_tone import get_centertone_tracks
 
 def call_centertone_idx():
-    path = '/Users/ishani/Downloads/FirefoxDownloads/time_14_1_freq_11_325G_bw_2.0M_1706062245.5353017_inrx0.dat'
+    path = '/home/ishani/LeoPNT/USRP_data/1_21/time_23_5_freq_11_325G_bw_2.0M_1705900406.6641364_inrx0.dat'
     sample_rate = 2e6
     start_idx = int(131400000)
     num_samples_per_step = int(0.014*sample_rate)
     print(num_samples_per_step)
-    num_read_samples = 10000000
-    center_tone_idx = get_centertoneidx(path, start_idx, num_samples_per_step, sample_rate, nfft=num_samples_per_step)
+    thresh_multiplier = 3
+    center_tone_idx = get_centertoneidx(path, start_idx, num_samples_per_step, sample_rate, thresh_multiplier, nfft=num_samples_per_step)
 def read_pickle(file_path):
     import pickle
     with open(file_path, 'rb') as f:
@@ -49,5 +49,4 @@ def check_ref():
 
 if __name__ == "__main__":
     # call_centertone_idx()
-    get_centertone_tracks('./center_tone_dict.pkl', [165, 250, 480],  [205, 300, 540], 2e6)
-    # call_centerton()
+    get_centertone_tracks('./center_tone_dict.pkl', [150, 180, 580, 640],  [180, 230, 640, 690], 2e6)
