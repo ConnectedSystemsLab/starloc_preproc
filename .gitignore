@@ -18,3 +18,4 @@ indoor_aoa.m
 *.png
 *.jpg
 *.jpeg
+.ipynb_checkpoints/
