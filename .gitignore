@@ -15,3 +15,6 @@ resamp_test.m
 __pycache__/
 have_a_look.ipynb
 indoor_aoa.m
+*.png
+*.jpg
+*.jpeg
