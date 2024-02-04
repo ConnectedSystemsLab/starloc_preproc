@@ -92,3 +92,22 @@ class CalibrationSignal:
             start_idx = stop_idx + 1e6 # skipping a few samples after stop idx to set new start_idx for finding calibration/ref sig
 
         return ref_sig_indexes
+    
+    def get_refsig_phase(self, fp, ref_sig_idx):
+        """
+        Get the phase of the reference signal. 
+        
+        :param fp: file path
+        :param ref_sig_idx: start and stop index of the reference signal obtained from function get_all_refsigidx()
+        """
+        num_ref_sig = len(ref_sig_idx)  # how many reference signal periods are there
+        phase_ref = np.empty(num_ref_sig)
+        for i in range(num_ref_sig):
+            # discard the first 0.01s of the reference signal to avoid the transient
+            sig_ref_i = read_dat_file(fp, int(ref_sig_idx[i][1]-ref_sig_idx[i][0]-0.01*2e6), int(ref_sig_idx[i][0]+0.01*2e6))
+            # do fft and find the peak's phase
+            sig_fft = np.fft.fft(sig_ref_i)
+            peak_idx = np.argmax(np.abs(sig_fft))
+            phase_ref[i] = np.angle(sig_fft[peak_idx])
+
+        return phase_ref
