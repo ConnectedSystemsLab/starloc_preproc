@@ -1,6 +1,6 @@
 addpath ../Tool_Functions/;
 % change this to the date you want to process
-date_ = "1_21/";
+date_ = "2_3/";
 load(date_+"/info.mat");
 %% file
 f_0 = IQ_Sample_file_0;
@@ -21,7 +21,10 @@ while start_idx < t_end*sample_rate
     sig_1 = read_complex_binary2(f_1, num_read_samples, start_idx);
     sig_2 = read_complex_binary2(f_2, num_read_samples, start_idx);
     start_idx = start_idx+num_read_samples;
-    if start_idx < noise_idx
+    % check whether current time is in the reference signal, if so, skip
+    later_than_begin = start_idx >= ref_sig_idx(:,1);
+    ealier_than_end = start_idx <= ref_sig_idx(:,2);
+    if find(later_than_begin & ealier_than_end)
         continue;
     end
     sig_0_fft = fftshift(fft(sig_0));
