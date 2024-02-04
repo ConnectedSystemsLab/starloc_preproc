@@ -1,52 +1,27 @@
-from utils.center_tone import get_centertoneidx
-from utils.center_tone import get_centertone_tracks
 
-def call_centertone_idx():
-    path = '/home/ishani/LeoPNT/USRP_data/1_21/time_23_5_freq_11_325G_bw_2.0M_1705900406.6641364_inrx0.dat'
+def call_imu_data():
+    from utils.imu_data import IMUData
+    imu = IMUData('/home/ishani/LeoPNT/USRP_data/2_3/imu_20240203233508.txt') # creates an instance of IMUData
+    imu_data = imu.read_imu_data() # reads all imu data from the file. More details in utils/imu_data.py 
+    attitude = imu.get_attitude() # use the get_attitude() method to get the yaw pitch and roll data
+    import numpy as np  
+    mean_attuitude = [np.mean(attitude[0]), np.mean(attitude[1]), np.mean(attitude[2])]
+    print(mean_attuitude)
+    time = imu.get_utctimestamp() # use the get_utctimestamp() method to get the timestamp data
+
+    latlong = imu.get_latlonalt()
+
+def call_calibration():
+    from utils.calibration import CalibrationSignal
+    filepath ='/home/ishani/LeoPNT/USRP_data/2_3/utctime_3Feb2024_22:03:48_freq_11_325G_bw_2.0M_ts_1706997828.7235794_inrx0.dat'
+    center_freq_rx = 11.325e9
+    tx_freq = 11.3252e9
     sample_rate = 2e6
-    start_idx = int(131400000)
-    num_samples_per_step = int(0.014*sample_rate)
-    print(num_samples_per_step)
-    thresh_multiplier = 3
-    center_tone_idx = get_centertoneidx(path, start_idx, num_samples_per_step, sample_rate, thresh_multiplier, nfft=num_samples_per_step)
-def read_pickle(file_path):
-    import pickle
-    with open(file_path, 'rb') as f:
-        data = pickle.load(f)
-        print(data)
-    return 0
-
-def check_ref():
-    import numpy as np
-    import matplotlib
-    matplotlib.use('TkAgg') 
-    from matplotlib import pyplot as plt
-
-    from read_raw_data import read_dat_file
-
-    path0 = '/home/ishani/LeoPNT/USRP_data/1_23/time_14_1_freq_11_325G_bw_2.0M_1706062245.5353017_inrx0.dat'
-    path1 = '/home/ishani/LeoPNT/USRP_data/1_23/time_14_1_freq_11_325G_bw_2.0M_1706062245.5353017_inrx1.dat'
-    path2 = '/home/ishani/LeoPNT/USRP_data/1_23/time_14_1_freq_11_325G_bw_2.0M_1706062245.5353017_inrx2.dat'
-
-    iq0 = read_dat_file(path0, None, 0)
-    iq1 = read_dat_file(path1, None, 0)
-    iq2 = read_dat_file(path2, None, 0)
-    # take mean of every 1000 samples
-    div, _ = divmod(len(iq0),2e6)
-    iq0 = iq0[0:int(div*2e6)]
-    iq1 = iq1[0:int(div*2e6)]
-    iq2 = iq2[0:int(div*2e6)]
-    iq0_mean = np.mean(iq0.reshape(-1, int(2e6)), axis=1)
-    iq1_mean = np.mean(iq1.reshape(-1, int(2e6)), axis=1)
-    iq2_mean = np.mean(iq2.reshape(-1, int(2e6)), axis=1)
-
-    # plot interactive plot
-
-    plt.plot(np.angle(iq0[1000000:int(2e6*10)]/iq1[1000000:int(2e6*10)]))
-    plt.show()
-
-    return 0
+    cal = CalibrationSignal(filepath, center_freq_rx, tx_freq, sample_rate) # creates an instance of CalibrationSignal. More details in utils/calibration.py 
+    ref_sig_idx = cal.get_all_refsigidx() # use the get_all_refsigidx() method to get the start and stop index of the reference signal
+    print(ref_sig_idx) 
 
 if __name__ == "__main__":
-    # call_centertone_idx()
-    get_centertone_tracks('./center_tone_dict.pkl', [150, 180, 580, 640],  [180, 230, 640, 690], 2e6)
+
+    # call_imu_data()
+    call_calibration()
