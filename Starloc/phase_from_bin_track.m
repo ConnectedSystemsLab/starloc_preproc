@@ -4,8 +4,8 @@ date_ = "2_3/";
 load(date_+"/info.mat");
 %% file
 f_0 = IQ_Sample_file_0;
-f_1 = strrep(f_0,'rx1','rx0');
-f_2 = strrep(f_0,'rx1','rx2');
+f_1 = strrep(f_0,'rx0','rx1');
+f_2 = strrep(f_0,'rx0','rx2');
 num_read_samples = 14e-3*sample_rate;
 f = linspace(-sample_rate/2, sample_rate/2, num_read_samples);
 
