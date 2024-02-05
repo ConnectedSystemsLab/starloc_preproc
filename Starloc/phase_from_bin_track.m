@@ -1,27 +1,29 @@
 addpath ../Tool_Functions/;
 % change this to the date you want to process
-date_ = "1_21/";
+date_ = "2_3/";
 load(date_+"/info.mat");
 %% file
 f_0 = IQ_Sample_file_0;
 f_1 = strrep(f_0,'rx0','rx1');
 f_2 = strrep(f_0,'rx0','rx2');
-% sample_rate = 2e6;
 num_read_samples = 14e-3*sample_rate;
 f = linspace(-sample_rate/2, sample_rate/2, num_read_samples);
-noise_idx = loc_sig_idx;
 
 %% track doppler
 res = [];
 start_idx = 1;
 thresh = 3;
 if_visual = 0;
+buffer = 0.0005 * 2e6; % number of samples to add before and after the reference signal when looking for center tones
 while start_idx < t_end*sample_rate
     sig_0 = read_complex_binary2(f_0, num_read_samples, start_idx);
     sig_1 = read_complex_binary2(f_1, num_read_samples, start_idx);
     sig_2 = read_complex_binary2(f_2, num_read_samples, start_idx);
     start_idx = start_idx+num_read_samples;
-    if start_idx < noise_idx
+    % check whether current time is in the reference signal, if so, skip
+    later_than_begin = start_idx >= ref_sig_idx(:,1)-buffer;
+    ealier_than_end = start_idx <= ref_sig_idx(:,2)+buffer;
+    if find(later_than_begin & ealier_than_end)
         continue;
     end
     sig_0_fft = fftshift(fft(sig_0));
