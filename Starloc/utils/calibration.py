@@ -93,18 +93,18 @@ class CalibrationSignal:
 
         return ref_sig_indexes
     
-    def get_refsig_phase(self, fp, ref_sig_idx):
+    def get_refsig_phase(self, ref_sig_idx, buffer=0.01):
         """
         Get the phase of the reference signal. 
         
-        :param fp: file path
         :param ref_sig_idx: start and stop index of the reference signal obtained from function get_all_refsigidx()
+        :param buffer: time to discard from the reference signal to avoid the transient
         """
         num_ref_sig = len(ref_sig_idx)  # how many reference signal periods are there
         phase_ref = np.empty(num_ref_sig)
         for i in range(num_ref_sig):
-            # discard the first 0.01s of the reference signal to avoid the transient
-            sig_ref_i = read_dat_file(fp, int(ref_sig_idx[i][1]-ref_sig_idx[i][0]-0.01*2e6), int(ref_sig_idx[i][0]+0.01*2e6))
+            # discard the first buffer seconds of the reference signal to avoid the transient
+            sig_ref_i = read_dat_file(self.file_path, int(ref_sig_idx[i][1]-ref_sig_idx[i][0]-buffer*self.sample_rate), int(ref_sig_idx[i][0]+buffer*self.sample_rate))
             # do fft and find the peak's phase
             sig_fft = np.fft.fft(sig_ref_i)
             peak_idx = np.argmax(np.abs(sig_fft))
