@@ -111,7 +111,7 @@ def connect_doppler(date):
     return track_dicts
 
 def doppler_sim(date, path, fc, t_start, t_stop, t_step):
-    min_ele = 50 # degrees
+    min_ele = 70 # degrees
     satellites = load.tle_file(path) # either use path to tle or directly fetch latest tle from the url
     print("number of Starlink satellites loaded " + str(len(satellites)))
     open_satfile_list = []

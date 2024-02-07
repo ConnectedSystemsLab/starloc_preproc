@@ -1,6 +1,6 @@
 addpath ../Tool_Functions/;
 % change this to the date you want to process
-date_ = "2_3/";
+date_ = "2_5/";
 load(date_+"/info.mat");
 %% file
 f_0 = IQ_Sample_file_0;
@@ -14,7 +14,7 @@ res = [];
 start_idx = 1;
 thresh = 3;
 if_visual = 0;
-buffer = 0.0005 * 2e6; % number of samples to add before and after the reference signal when looking for center tones
+buffer = 0.03 * 2e6; % number of samples to add before and after the reference signal when looking for center tones
 while start_idx < t_end*sample_rate
     sig_0 = read_complex_binary2(f_0, num_read_samples, start_idx);
     sig_1 = read_complex_binary2(f_1, num_read_samples, start_idx);
