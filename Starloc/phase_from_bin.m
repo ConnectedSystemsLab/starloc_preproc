@@ -2,7 +2,7 @@
 % first specify the date here, make sure that res.mat is saved to this
 % folder (also for id doppler, simulation results needed), make sure the
 % root directory is Starloc/
-date = "2_3/";
+date = "2_5/";
 % have a look at original tracks
 addpath ../Tool_Functions/;
 sample_rate = 2e6;
@@ -12,9 +12,14 @@ load(date+"res.mat");
 % filter out wideband sig & have a look at res
 f_bin = res(:,2);
 res = res(f_bin < 2e4 & f_bin > 0.9e4,:);
-res = res(f_bin > 1.3595e4 | f_bin < 1.356e4,:);
+f_bin = res(:,2);
+% res = res(f_bin > 1.3595e4 | f_bin < 1.356e4,:);
+res = res(f_bin > 1.3545e4 | f_bin < 1.3533e4,:);
 clear f_bin;
+figure(1);
 plot(res(:,1),res(:,2),'.');
+saveas(1, date+"doppler_track.png");
+
 %% split different satellites
 % need to specify when does a satellite appear and end, intervals can
 % overlap
@@ -25,8 +30,13 @@ plot(res(:,1),res(:,2),'.');
 % period_starts = [150 180 580 670];
 % period_ends = [180 230 640 690];
 % 2_3-3Feb2024_22:03:48
-period_starts = [5 58 155 205 390 450];
-period_ends = [25 97 183 230 430 500];
+% period_starts = [5 58 155 205 390 450];
+% period_ends = [25 97 183 230 430 500];
+% 2_5-5Feb2024_23:41:22
+period_starts = [364 640 798];
+period_ends = [392 710 870];
+% period_starts = [364 640 798 866];
+% period_ends = [392 710 833 880];
 
 num_periods = length(period_starts);
 res_ = {};
@@ -78,6 +88,8 @@ for jj = 1:length(tracks)
     end
 end
 % pick up others
+% all centertone tracks belonging to a satellite have the same slope,
+% so we subtrack the slope of the main track from the other track points to create the lobgest track with the most points
 track_main = tracks{max_idx};
 a = polyfit(track_main(:,1), track_main(:,2), 1);
 bin_freq = sample_rate/num_read_samples;
@@ -89,11 +101,17 @@ for ii = 1:num_points
         dis = abs(f_bin_tar+jj*bin_spacing-f_bin_cur);
         if dis < 10
             bias = [0 jj*bin_spacing 0 0 0];
-            track_main = [track_main ; res_1sat(ii,:)-bias];
+            track_main = [track_main ; res_1sat(ii,:)-bias]; % TODO: Needs fix, the main track points will be duplicated. This might lead to error in polyfit/minimize functions later
             break;
         end
     end    
 end
+figure(5);
+plot(track_main(:,1), track_main(:,2), '.');
+saveas(5, date+"doppler_track_main.png");
+
+% again fit a polynomial to the main track and find the points that are
+% points that are multiples of 44khz away from this main track are considered a part of the the centertone track from the satellite under consideration
 a = polyfit(track_main(:,1), track_main(:,2), 2);
 dopp_track = [];
 for ii = 1:num_points
@@ -125,6 +143,7 @@ for sat_id = 1:num_periods
     plot(dopp_track(:,1), dopp_track(:,2), '.', DisplayName="sat #"+num2str(sat_id));
 end
 legend;xlabel('t / s'); ylabel('f_d / Hz'); title('Tracked central tones');
+saveas(10, date+"doppler_track_split.png");
 %% plot delta_phi
 figure(2);
 for sat_id = 1:num_periods
@@ -141,6 +160,7 @@ for sat_id = 1:num_periods
     % ylim([-pi pi]);
     % clf;
 end
+saveas(2, date+"delta_phi.png");
 %%
 %%%%%%%%%% PART 2: ID %%%%%%%%%%%%%%%
 %% ID - cheat, if not cheating, skip and run the following section
@@ -156,16 +176,18 @@ end
 % id_dict{9} = "STARLINK-5598";
 
 % 1_21 -1
-id_dict{1} = "STARLINK-6247";
-id_dict{2} = "STARLINK-4175";
-id_dict{3} = "STARLINK-6079";
-id_dict{4} = "STARLINK-6245";
+% id_dict{1} = "STARLINK-6247";
+% id_dict{2} = "STARLINK-4175";
+% id_dict{3} = "STARLINK-6079";
+% id_dict{4} = "STARLINK-6245";
 
 
 %% doppler sim & identify
 % first load the doppler from date folder
 load(date+"output_doppler.mat");
 sat_sim_fn = fieldnames(sat_dopp_dict);
+
+% in the main track, get unique time stamps and freq bin values are averaged
 for sat_id = 1:num_periods
     dopp_main = dopp_track_main_dict{sat_id};
     dopp_main(:,2) = f(dopp_main(:,2));
@@ -179,12 +201,13 @@ for sat_id = 1:num_periods
     end
     dopp_track_main_dict{sat_id} = dopp_main_;
 end
+
 % id
 id_dict = {};
 freq_offset = zeros(num_periods, 1);
 for sat_id = 1:num_periods
     min_var = inf;
-    dopp_main = dopp_track_main_dict{sat_id};
+    dopp_main = dopp_track_main_dict{sat_id}; % the new dopp_main_track_dict with unique time stamps and only time, freq for each satellite
     dopp_main(:,1) = dopp_main(:,1);
     t_1 = dopp_main(1,1); t_2 = dopp_main(end,1);
     [~,sim_idx_1] = min(abs(t_list-t_1));
@@ -212,7 +235,7 @@ end
 % since there are too many satellites, click on "edit plot" in the figure
 % window tool bar and right click the simulated dashed curve and "open
 % property inspector" to see its name
-figure;hold on;
+figure(3);hold on;
 for idx = 1:length(sat_sim_fn)
     name = sat_sim_fn{idx};
     sim_data = getfield(sat_dopp_dict, name);
@@ -220,11 +243,12 @@ for idx = 1:length(sat_sim_fn)
 end
 for sat_id = 1:num_periods
     dopp_main = dopp_track_main_dict{sat_id};
-    plot(dopp_main(:,1), dopp_main(:,2)+freq_offset(sat_id), '.')
+    plot(dopp_main(:,1), dopp_main(:,2)+freq_offset(sat_id), '.') % plotting the main track over simulated
 end
-
+saveas(3, date+"sat_matched_result.png");
+saveas(3, date+"sat_matched_result_takeonly3.fig");
 %% process delta_phi
-figure;
+figure(4);
 for sat_good = 1:num_periods
 dopp_track = dopp_track_dict{sat_good};
 t_repeat = dopp_track(:,1);
@@ -252,9 +276,9 @@ loc_3d = r*[cosd(el_gt).*sind(az_gt) cosd(el_gt).*cosd(az_gt) sind(el_gt)];
 loc_1 = [0 ; 0 ; 0];
 loc_0 = [0 ; -d ; 0];
 loc_2 = [d ; 0 ; 0];
-alpha = 1; R_alpha = [cosd(alpha) -sind(alpha) 0;sind(alpha) cosd(alpha) 0;0 0 1];
-beta = -1.34; R_beta = [cosd(beta) 0 sind(beta);0 1 0;-sind(beta) 0 cosd(beta)];
-gamma = 2.6; R_gamma = [1 0 0;0 cosd(gamma) -sind(gamma);0 sind(gamma) cosd(gamma)];
+alpha = -0.2; R_alpha = [cosd(alpha) -sind(alpha) 0;sind(alpha) cosd(alpha) 0;0 0 1]; % yaw
+beta = 0.33676737681284424; R_beta = [cosd(beta) 0 sind(beta);0 1 0;-sind(beta) 0 cosd(beta)]; % pitch 
+gamma = 1.2296712544820534; R_gamma = [1 0 0;0 cosd(gamma) -sind(gamma);0 sind(gamma) cosd(gamma)]; % roll
 R = R_alpha*R_beta*R_gamma;
 range_1 = vecnorm((loc_3d-(R*loc_1)')');
 range_0 = vecnorm((loc_3d-(R*loc_0)')');
@@ -296,116 +320,117 @@ legend
 % plot(t,polyval(coeff_01, t)-phase_offset_01)
 % plot(t,polyval(coeff_02, t)-phase_offset_02)
 end
+saveas(4, date+"delta_phi_compare.png");
+saveas(4, date+"delta_phi_compare.fig");
+% %%%%%%%%%% PART 3: test parts %%%%%%%%%%%%%%%
+% %% test
+% bias_err = [];
+% slope_err = [];
+% theta_err_list = [-4:0.2:4];
+% phi_err_list = [-4:0.2:4];
+% gamma_err_list = [0];
+% for ii = 1:length(theta_err_list)
+% theta_err_list(ii)
+% for jj = 1:length(phi_err_list)
+% phi_err_list(jj)
+% for kk = 1:length(gamma_err_list)
+% tmp = zeros(1,8); tmp_ = zeros(1,8);
+% for sat_good = 1:4
+% dopp_track = dopp_track_dict{sat_good};
+% t_repeat = dopp_track(:,1);
+% del_phi_repeat_01 = unwrap(angle(dopp_track(:,3))-angle(dopp_track(:,4)));
+% del_phi_repeat_02 = unwrap(angle(dopp_track(:,3))-angle(dopp_track(:,5)));
+% del_phi_repeat_12 = unwrap(angle(dopp_track(:,4))-angle(dopp_track(:,5)));
+% coeff_01 = polyfit(t_repeat, del_phi_repeat_01, 2);
+% coeff_02 = polyfit(t_repeat, del_phi_repeat_02, 2);
+% coeff_12 = polyfit(t_repeat, del_phi_repeat_12, 2);
+% % compare with gt
+% load ../../box/1_21/output_doppler_1_new.mat
+% sat_sim_fn = fieldnames(sat_dopp_dict);
+% name = id_dict{sat_good};
+% sat_dopp = getfield(sat_dopp_dict, name);
+% dopp_track = dopp_track_dict{sat_good};
+% t = unique(dopp_track(:,1));
+% t_sim = t_list(t_list>t(1)-1&t_list<t(end)+1);
+% az_gt = sat_dopp(2,:)'; az_gt = az_gt(t_list>t(1)-1&t_list<t(end)+1);
+% el_gt = sat_dopp(3,:)'; el_gt = el_gt(t_list>t(1)-1&t_list<t(end)+1);
+% r = 1e8;
+% d = 13.25e-2;
+% lambda = 3e8/11.325e9;
+% loc_3d = r*[cosd(el_gt).*sind(az_gt) cosd(el_gt).*cosd(az_gt) sind(el_gt)];
+% theta_err = theta_err_list(ii);
+% phi_err = phi_err_list(jj);
+% gamma_err = gamma_err_list(kk);
+% rx_0 = [0 -d 0]; rx_2 = [-d 0 0];
+% % R_yaw = [cosd(yaw_err) -sind(yaw_err) 0; sind(yaw_err) cosd(yaw_err) 0 ; 0 0 1];
+% % R_pitch = [cosd(pitch_err) 0 -sind(pitch_err);0 1 0;sind(pitch_err) 0 cosd(pitch_err)];
+% % R_roll = [1 0 0; 0 cosd(roll_err) -sind(roll_err);0 sind(roll_err) cosd(roll_err)];
+% range_1 = vecnorm((loc_3d-[0 0 0])');
+% % range_0 = vecnorm((loc_3d-rx_0*R_yaw'*R_pitch'*R_roll')');
+% % range_2 = vecnorm((loc_3d-rx_2*R_yaw'*R_pitch'*R_roll')');
+% range_2 = vecnorm((loc_3d-d*[-cosd(theta_err)*cosd(phi_err) -sind(theta_err)*cosd(phi_err) -sind(phi_err)])');
+% range_0 = vecnorm((loc_3d-d*[-sind(theta_err)*cosd(gamma_err) -cosd(theta_err)*cosd(gamma_err) sind(gamma_err)])');
+% % d*[-sind(theta_err)*cosd(gamma_err) -cosd(theta_err)*cosd(gamma_err) sind(gamma_err)]
+% del_phi_01_gt = -(range_0-range_1)/lambda*2*pi;
+% del_phi_02_gt = -(range_0-range_2)/lambda*2*pi;
+% del_phi_12_gt = -(range_1-range_2)/lambda*2*pi;
 
-%%%%%%%%%% PART 3: test parts %%%%%%%%%%%%%%%
-%% test
-bias_err = [];
-slope_err = [];
-theta_err_list = [-4:0.2:4];
-phi_err_list = [-4:0.2:4];
-gamma_err_list = [0];
-for ii = 1:length(theta_err_list)
-theta_err_list(ii)
-for jj = 1:length(phi_err_list)
-phi_err_list(jj)
-for kk = 1:length(gamma_err_list)
-tmp = zeros(1,8); tmp_ = zeros(1,8);
-for sat_good = 1:4
-dopp_track = dopp_track_dict{sat_good};
-t_repeat = dopp_track(:,1);
-del_phi_repeat_01 = unwrap(angle(dopp_track(:,3))-angle(dopp_track(:,4)));
-del_phi_repeat_02 = unwrap(angle(dopp_track(:,3))-angle(dopp_track(:,5)));
-del_phi_repeat_12 = unwrap(angle(dopp_track(:,4))-angle(dopp_track(:,5)));
-coeff_01 = polyfit(t_repeat, del_phi_repeat_01, 2);
-coeff_02 = polyfit(t_repeat, del_phi_repeat_02, 2);
-coeff_12 = polyfit(t_repeat, del_phi_repeat_12, 2);
-% compare with gt
-load ../../box/1_21/output_doppler_1_new.mat
-sat_sim_fn = fieldnames(sat_dopp_dict);
-name = id_dict{sat_good};
-sat_dopp = getfield(sat_dopp_dict, name);
-dopp_track = dopp_track_dict{sat_good};
-t = unique(dopp_track(:,1));
-t_sim = t_list(t_list>t(1)-1&t_list<t(end)+1);
-az_gt = sat_dopp(2,:)'; az_gt = az_gt(t_list>t(1)-1&t_list<t(end)+1);
-el_gt = sat_dopp(3,:)'; el_gt = el_gt(t_list>t(1)-1&t_list<t(end)+1);
-r = 1e8;
-d = 13.25e-2;
-lambda = 3e8/11.325e9;
-loc_3d = r*[cosd(el_gt).*sind(az_gt) cosd(el_gt).*cosd(az_gt) sind(el_gt)];
-theta_err = theta_err_list(ii);
-phi_err = phi_err_list(jj);
-gamma_err = gamma_err_list(kk);
-rx_0 = [0 -d 0]; rx_2 = [-d 0 0];
-% R_yaw = [cosd(yaw_err) -sind(yaw_err) 0; sind(yaw_err) cosd(yaw_err) 0 ; 0 0 1];
-% R_pitch = [cosd(pitch_err) 0 -sind(pitch_err);0 1 0;sind(pitch_err) 0 cosd(pitch_err)];
-% R_roll = [1 0 0; 0 cosd(roll_err) -sind(roll_err);0 sind(roll_err) cosd(roll_err)];
-range_1 = vecnorm((loc_3d-[0 0 0])');
-% range_0 = vecnorm((loc_3d-rx_0*R_yaw'*R_pitch'*R_roll')');
-% range_2 = vecnorm((loc_3d-rx_2*R_yaw'*R_pitch'*R_roll')');
-range_2 = vecnorm((loc_3d-d*[-cosd(theta_err)*cosd(phi_err) -sind(theta_err)*cosd(phi_err) -sind(phi_err)])');
-range_0 = vecnorm((loc_3d-d*[-sind(theta_err)*cosd(gamma_err) -cosd(theta_err)*cosd(gamma_err) sind(gamma_err)])');
-% d*[-sind(theta_err)*cosd(gamma_err) -cosd(theta_err)*cosd(gamma_err) sind(gamma_err)]
-del_phi_01_gt = -(range_0-range_1)/lambda*2*pi;
-del_phi_02_gt = -(range_0-range_2)/lambda*2*pi;
-del_phi_12_gt = -(range_1-range_2)/lambda*2*pi;
-
-phase_offset_01 = -1.8778144183525671;
-phase_offset_02 = 1.419487080207238;
-phase_offset_12 = -2.9858594869711377;
-del_phi_repeat_01 = del_phi_repeat_01-phase_offset_01;
-del_phi_repeat_12 = del_phi_repeat_12-phase_offset_12;
-param_01 = polyfit(t_repeat, del_phi_repeat_01, 1);
-param_01_gt = polyfit(t_sim, del_phi_01_gt, 1);
-param_12 = polyfit(t_repeat, del_phi_repeat_12, 1);
-param_12_gt = polyfit(t_sim, del_phi_12_gt, 1);
-candidates_01 = polyval(param_01, t_sim)+[-2:2]'*2*pi;
-candidates_12 = polyval(param_12, t_sim)+[-2:2]'*2*pi;
-dis_01 = mean(candidates_01-del_phi_01_gt,2);
-dis_12 = mean(candidates_12-del_phi_12_gt,2);
-[min_err_01, min_idx] = min(abs(dis_01));
-del_phi_repeat_01 = del_phi_repeat_01+2*pi*(min_idx-3);
-[min_err_12, min_idx] = min(abs(dis_12));
-del_phi_repeat_12 = del_phi_repeat_12+2*pi*(min_idx-3);
-param_01 = polyfit(t_repeat, del_phi_repeat_01, 1);
-param_12 = polyfit(t_repeat, del_phi_repeat_12, 1);
-tmp(sat_good*2-1) = min_err_01;
-tmp(sat_good*2) = min_err_12;
-tmp_(sat_good*2-1) = abs(param_01(1)-param_01_gt(1));
-tmp_(sat_good*2) = abs(param_12(1)-param_12_gt(1));
-% plot
-% if theta_err == 2.6 && phi_err == -3
-if size(bias_err,1) == 1398
-subplot(2,2,sat_good);hold on; 
-plot(t_repeat,del_phi_repeat_01, '.',DisplayName="angle(rx0/rx1) - real")
-% plot(t_repeat,del_phi_repeat_02-phase_offset_02, '.',DisplayName="angle(rx0/rx2) - real")
-plot(t_repeat,del_phi_repeat_12, '.',DisplayName="angle(rx1/rx2) - real")
-plot(t_sim, del_phi_01_gt,  LineWidth=3, Color=[0.00,0.45,0.74],DisplayName="angle(rx0/rx1) - simulated")
-% plot(t_sim, del_phi_02_gt,  LineWidth=3, Color=[0.85,0.33,0.10],DisplayName="angle(rx0/rx2) - simulated")
-plot(t_sim, del_phi_12_gt,  LineWidth=3, Color=[0.85,0.33,0.10],DisplayName="angle(rx1/rx2) - simulated")
-% plot(t_sim, del_phi_12_gt,  LineWidth=3, Color=[0.93,0.69,0.13])
-plot(t_repeat, polyval(param_01,t_repeat),'--',DisplayName='angle(rx0/rx1) - LS',LineWidth=3,Color=[1,0.45,0.74])
-plot(t_repeat, polyval(param_12,t_repeat),'--',DisplayName='angle(rx1/rx2) - LS',LineWidth=3,Color=[0,0.33,0.10])
-title("Sat #"+num2str(sat_good))
-legend
-end
-% plot(t,polyval(coeff_01, t)-phase_offset_01)
-% plot(t,polyval(coeff_02, t)-phase_offset_02)
-end
-bias_err = [bias_err ; tmp];
-slope_err = [slope_err ; tmp_];
-end
-end
-end
-%%
-hold on;
-plot(bias_err(:,2))
-plot(bias_err(:,4))
-plot(bias_err(:,6))
-plot(bias_err(:,8))
-%%
-hold on;
-plot(slope_err(:,2))
-plot(slope_err(:,4))
-plot(slope_err(:,6))
-plot(slope_err(:,8))
+% phase_offset_01 = -1.8778144183525671;
+% phase_offset_02 = 1.419487080207238;
+% phase_offset_12 = -2.9858594869711377;
+% del_phi_repeat_01 = del_phi_repeat_01-phase_offset_01;
+% del_phi_repeat_12 = del_phi_repeat_12-phase_offset_12;
+% param_01 = polyfit(t_repeat, del_phi_repeat_01, 1);
+% param_01_gt = polyfit(t_sim, del_phi_01_gt, 1);
+% param_12 = polyfit(t_repeat, del_phi_repeat_12, 1);
+% param_12_gt = polyfit(t_sim, del_phi_12_gt, 1);
+% candidates_01 = polyval(param_01, t_sim)+[-2:2]'*2*pi;
+% candidates_12 = polyval(param_12, t_sim)+[-2:2]'*2*pi;
+% dis_01 = mean(candidates_01-del_phi_01_gt,2);
+% dis_12 = mean(candidates_12-del_phi_12_gt,2);
+% [min_err_01, min_idx] = min(abs(dis_01));
+% del_phi_repeat_01 = del_phi_repeat_01+2*pi*(min_idx-3);
+% [min_err_12, min_idx] = min(abs(dis_12));
+% del_phi_repeat_12 = del_phi_repeat_12+2*pi*(min_idx-3);
+% param_01 = polyfit(t_repeat, del_phi_repeat_01, 1);
+% param_12 = polyfit(t_repeat, del_phi_repeat_12, 1);
+% tmp(sat_good*2-1) = min_err_01;
+% tmp(sat_good*2) = min_err_12;
+% tmp_(sat_good*2-1) = abs(param_01(1)-param_01_gt(1));
+% tmp_(sat_good*2) = abs(param_12(1)-param_12_gt(1));
+% % plot
+% % if theta_err == 2.6 && phi_err == -3
+% if size(bias_err,1) == 1398
+% subplot(2,2,sat_good);hold on; 
+% plot(t_repeat,del_phi_repeat_01, '.',DisplayName="angle(rx0/rx1) - real")
+% % plot(t_repeat,del_phi_repeat_02-phase_offset_02, '.',DisplayName="angle(rx0/rx2) - real")
+% plot(t_repeat,del_phi_repeat_12, '.',DisplayName="angle(rx1/rx2) - real")
+% plot(t_sim, del_phi_01_gt,  LineWidth=3, Color=[0.00,0.45,0.74],DisplayName="angle(rx0/rx1) - simulated")
+% % plot(t_sim, del_phi_02_gt,  LineWidth=3, Color=[0.85,0.33,0.10],DisplayName="angle(rx0/rx2) - simulated")
+% plot(t_sim, del_phi_12_gt,  LineWidth=3, Color=[0.85,0.33,0.10],DisplayName="angle(rx1/rx2) - simulated")
+% % plot(t_sim, del_phi_12_gt,  LineWidth=3, Color=[0.93,0.69,0.13])
+% plot(t_repeat, polyval(param_01,t_repeat),'--',DisplayName='angle(rx0/rx1) - LS',LineWidth=3,Color=[1,0.45,0.74])
+% plot(t_repeat, polyval(param_12,t_repeat),'--',DisplayName='angle(rx1/rx2) - LS',LineWidth=3,Color=[0,0.33,0.10])
+% title("Sat #"+num2str(sat_good))
+% legend
+% end
+% % plot(t,polyval(coeff_01, t)-phase_offset_01)
+% % plot(t,polyval(coeff_02, t)-phase_offset_02)
+% end
+% bias_err = [bias_err ; tmp];
+% slope_err = [slope_err ; tmp_];
+% end
+% end
+% end
+% %%
+% hold on;
+% plot(bias_err(:,2))
+% plot(bias_err(:,4))
+% plot(bias_err(:,6))
+% plot(bias_err(:,8))
+% %%
+% hold on;
+% plot(slope_err(:,2))
+% plot(slope_err(:,4))
+% plot(slope_err(:,6))
+% plot(slope_err(:,8))

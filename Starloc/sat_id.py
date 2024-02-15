@@ -4,11 +4,8 @@ from scipy import io as sio
 from scipy.optimize import linear_sum_assignment
 import numpy as np
 import matplotlib.pyplot as plt
-from turtle import st
 from skyfield.api import load, wgs84
-from numpy import array2string
 from datetime import datetime, timedelta
-import os
 from scipy import io as sio
 import pytz
 

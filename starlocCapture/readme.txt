@@ -11,5 +11,6 @@ Running the experiment:
 1. Make sure you have permissions to access the switch
     sudo chmod 666 /dev/bus/usb/<BUS>/<DEVICE>
     <BUS> and <DEVICE> for the switch can be obtained using lsusb
-2. Run capture from this directory
+2. Run capture from this directory after you have enabled the environment for gnuradio
+    source prefix-3.10-new/setup_env.sh
     sh bash_scripts/run_expt.sh

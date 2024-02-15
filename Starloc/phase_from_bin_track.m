@@ -1,6 +1,6 @@
 addpath ../Tool_Functions/;
 % change this to the date you want to process
-date_ = "2_3/";
+date_ = "2_5/";
 load(date_+"/info.mat");
 %% file
 f_0 = IQ_Sample_file_0;
@@ -14,7 +14,7 @@ res = [];
 start_idx = 1;
 thresh = 3;
 if_visual = 0;
-buffer = 0.0005 * 2e6; % number of samples to add before and after the reference signal when looking for center tones
+buffer = 0.1 * 2e6; % number of samples to add before and after the reference signal when looking for center tones
 while start_idx < t_end*sample_rate
     sig_0 = read_complex_binary2(f_0, num_read_samples, start_idx);
     sig_1 = read_complex_binary2(f_1, num_read_samples, start_idx);
@@ -63,56 +63,56 @@ quit (0,"force");
 dopp_track_dict = {};
 dopp_track_main_dict = {};
 for sat_id = 1:num_periods
-res = res_{sat_id};
-num_points = size(res, 1);
-tracks = {};
-for ii = 1:num_points
-    pnt_curr = res(ii,:); t_curr = pnt_curr(1); f_bin_cur = pnt_curr(2);
-    if_assigned = false;
-    for jj = 1:length(tracks)
-        cur_track = tracks{jj};
-        last_track_point = cur_track(end,:);
-        t_last = last_track_point(1);
-        f_bin_last = last_track_point(2);
-        if abs(t_curr-t_last)<14e-3*15 && abs(f_bin_cur-f_bin_last)<15
-            if_assigned = true;
-            tracks{jj} = [tracks{jj} ; pnt_curr];
-            break;
+    res = res_{sat_id};
+    num_points = size(res, 1);
+    tracks = {};
+    for ii = 1:num_points
+        pnt_curr = res(ii,:); t_curr = pnt_curr(1); f_bin_cur = pnt_curr(2);
+        if_assigned = false;
+        for jj = 1:length(tracks)
+            cur_track = tracks{jj};
+            last_track_point = cur_track(end,:);
+            t_last = last_track_point(1);
+            f_bin_last = last_track_point(2);
+            if abs(t_curr-t_last)<14e-3*15 && abs(f_bin_cur-f_bin_last)<15
+                if_assigned = true;
+                tracks{jj} = [tracks{jj} ; pnt_curr];
+                break;
+            end
+        end
+        if ~if_assigned
+            tracks{length(tracks)+1} = pnt_curr;
         end
     end
-    if ~if_assigned
-        tracks{length(tracks)+1} = pnt_curr;
+    % find the longest & polyfit it
+    max_l = 0; max_idx = 0;
+    for jj = 1:length(tracks)
+        tmp = tracks{jj};
+        duration = tmp(end,1)-tmp(1,1);
+        if duration > max_l
+            max_l = duration;
+            max_idx = jj;
+        end
     end
-end
-% find the longest & polyfit it
-max_l = 0; max_idx = 0;
-for jj = 1:length(tracks)
-    tmp = tracks{jj};
-    duration = tmp(end,1)-tmp(1,1);
-    if duration > max_l
-        max_l = duration;
-        max_idx = jj;
+    % pick up others
+    track_main = tracks{max_idx};
+    a = polyfit(track_main(:,1), track_main(:,2), 1);
+    dopp_track = [];
+    bin_freq = sample_rate/num_read_samples;
+    bin_spacing = round(44e3/bin_freq);
+    for ii = 1:num_points
+        pnt_curr = res(ii,:); t_curr = pnt_curr(1); f_bin_cur = pnt_curr(2);
+        f_bin_tar = polyval(a,t_curr)+[-8:8]*bin_spacing;
+        dis = f_bin_cur-f_bin_tar;
+        if min(abs(dis)) < 5
+            dopp_track = [dopp_track ; res(ii,:)];
+            [~,argmin] = min(abs(dis));
+        end
     end
-end
-% pick up others
-track_main = tracks{max_idx};
-a = polyfit(track_main(:,1), track_main(:,2), 1);
-dopp_track = [];
-bin_freq = sample_rate/num_read_samples;
-bin_spacing = round(44e3/bin_freq);
-for ii = 1:num_points
-    pnt_curr = res(ii,:); t_curr = pnt_curr(1); f_bin_cur = pnt_curr(2);
-    f_bin_tar = polyval(a,t_curr)+[-8:8]*bin_spacing;
-    dis = f_bin_cur-f_bin_tar;
-    if min(abs(dis)) < 5
-        dopp_track = [dopp_track ; res(ii,:)];
-        [~,argmin] = min(abs(dis));
-    end
-end
-dopp_track_dict{sat_id} = dopp_track;
-dopp_track_main_dict{sat_id} = track_main;
-% res(:,2) = f(res(:,2));
-% dopp_track(:,2) = f(dopp_track(:,2));
+    dopp_track_dict{sat_id} = dopp_track;
+    dopp_track_main_dict{sat_id} = track_main;
+    % res(:,2) = f(res(:,2));
+    % dopp_track(:,2) = f(dopp_track(:,2));
 end
 %% plot doppler bin
 figure(1); hold on;
