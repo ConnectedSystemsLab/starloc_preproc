@@ -122,3 +122,4 @@ ypy-websocket==0.8.2
 zipp==3.11.0
 matplotlib==3.8.0
 matplotlib-inline==0.1.6
+pyqt5
