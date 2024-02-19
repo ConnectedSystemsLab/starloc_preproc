@@ -102,7 +102,6 @@ loc_0 = d_12*[-sind(alpha)*cosd(beta) ; -cosd(alpha)*cosd(beta) ; -sind(beta)];
 range_1 = vecnorm((loc_3d-(loc_1)')');
 range_0 = vecnorm((loc_3d-(loc_0)')');
 range_2 = vecnorm((loc_3d-(loc_2)')');
-disp(["range0 size", size(range_0)])
 del_phi_01_gt = -(range_0-range_1)/lambda*2*pi;
 del_phi_12_gt = -(range_1-range_2)/lambda*2*pi;
 param_01_gt = polyfit(t_sim, del_phi_01_gt, 2);
