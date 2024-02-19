@@ -1,6 +1,7 @@
 addpath ../Tool_Functions/;
 % change this to the date you want to process
-date_ = "2_5/";
+date_ = "5Feb2024_23-58-08/";
+disp(["date: ", date_]);
 load(date_+"/info.mat");
 %% file
 f_0 = IQ_Sample_file_0;
