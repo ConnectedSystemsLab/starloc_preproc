@@ -49,15 +49,16 @@ for sat_good = 1:num_periods
 end
 
 % finally start the parameter sweeping
-alpha_list = [-4:0.2:4]; l_1 = length(alpha_list);
-beta_list = [-4:0.2:4]; l_2 = length(beta_list);
-gamma_list = [-4:0.2:4]; l_3 = length(gamma_list);
-d_10_list = linspace(13.25e-2-0.2e-2,13.25e-2+0.2e-2,10);
-d_12_list = linspace(13.25e-2-0.2e-2,13.25e-2+0.2e-2,10);
+alpha_list = [-3:0.4:3]; l_1 = length(alpha_list);
+beta_list = [-3:0.4:3]; l_2 = length(beta_list);
+gamma_list = [-3:0.4:3]; l_3 = length(gamma_list);
+d_10_list = linspace(13.25e-2-0.6e-2,13.25e-2+0.6e-2,15);
+d_12_list = linspace(13.25e-2-0.6e-2,13.25e-2+0.6e-2,15);
 l_4 = length(d_10_list);
 l_5 = length(d_12_list);
 
 slope_err = zeros(l_1,l_2,l_3,l_4,l_5,num_periods,2);
+bias_err = zeros(l_1,l_2,l_3,l_4,l_5,num_periods,2);
 compute_cnt = 0;
 for i_1 = 1:l_1
 for i_2 = 1:l_2
@@ -69,7 +70,7 @@ compute_cnt = compute_cnt+1;
 compute_cnt*100/l_1/l_2/l_3/l_4/l_5
 % tmp = zeros(num_periods,1);
 slope_err_1_config = zeros(num_periods,2);
-
+bias_err_1_config = zeros(num_periods,2);
 for sat_good = 1:num_periods
 
 % location of sat
@@ -122,37 +123,76 @@ param_12 = param_12_dict{sat_good};
 % tmp(sat_good*2) = min_err_12;
 slope_err_1_config(sat_good,1) = abs(param_01(1)-param_01_gt(1));
 slope_err_1_config(sat_good,2) = abs(param_12(1)-param_12_gt(1));
-
+bias_err_1_config(sat_good,1) = mean(abs(del_phi_01_gt-polyval(param_01, t_sim)));
+bias_err_1_config(sat_good,2) = mean(mod(abs(del_phi_12_gt-polyval(param_12, t_sim)),2*pi));
 end
 % bias_err = [bias_err ; tmp];
 % slope_err = [slope_err ; slope_err_1_config];
 slope_err(i_1,i_2,i_3,i_4,i_5,:,:) = slope_err_1_config;
+bias_err_1_config(:,1) = 0;
+bias_err(i_1,i_2,i_3,i_4,i_5,:,:) = bias_err_1_config;
+
 end
 end
 end
 end
 end
 save(date_+"sweep_param_res.mat", "slope_err");
-%%
-hold on;
-plot(bias_err(:,2))
-plot(bias_err(:,4))
-plot(bias_err(:,6))
-plot(bias_err(:,8))
-title("bias err rx1-rx2")
-savefig("bias_err_rx1-rx2.fig")
-%%
-figure;hold on;
-plot(slope_err(:,1))
-plot(slope_err(:,3))
-plot(slope_err(:,5))
-plot(slope_err(:,7))
-title("slope err rx0-rx1")
-savefig("slope_err_rx0-rx1.fig")
-figure;hold on;
-plot(slope_err(:,2))
-plot(slope_err(:,4))
-plot(slope_err(:,6))
-plot(slope_err(:,8))
-title("slope err rx1-rx2")
-savefig("slope_err_rx1-rx2.fig")
+sum_slope_err = sum(slope_err,[6 7]);
+sum_bias_err = sum(bias_err,[6 7]);
+%% 
+m_slope = inf;
+res_slope = [];
+m_bias = inf;
+res_bias = [];
+for i_1 = 1:l_1
+for i_2 = 1:l_2
+for i_3 = 1:l_3
+for i_4 = 1:l_4
+for i_5 = 1:l_5
+    if sum_slope_err(i_1,i_2,i_3,i_4,i_5) < m_slope
+        m_slope = sum_slope_err(i_1,i_2,i_3,i_4,i_5);
+        res_slope = [i_1,i_2,i_3,i_4,i_5];
+    end
+    if sum_bias_err(i_1,i_2,i_3,i_4,i_5) < m_bias
+        m_bias = sum_bias_err(i_1,i_2,i_3,i_4,i_5);
+        res_bias = [i_1,i_2,i_3,i_4,i_5];
+    end
+end
+end
+end
+end
+end
+
+m_slope
+alpha_list(res_slope(1))
+beta_list(res_slope(2))
+gamma_list(res_slope(3))
+d_10_list(res_slope(4))
+d_12_list(res_slope(5))
+
+m_bias
+alpha_list(res_bias(1))
+beta_list(res_bias(2))
+gamma_list(res_bias(3))
+d_10_list(res_bias(4))
+d_12_list(res_bias(5))
+% %%
+% hold on;
+% plot(bias_err(:,2))
+% plot(bias_err(:,4))
+% plot(bias_err(:,6))
+% plot(bias_err(:,8))
+% %%
+% figure;hold on;
+% plot(slope_err(:,1))
+% plot(slope_err(:,3))
+% plot(slope_err(:,5))
+% plot(slope_err(:,7))
+% title("slope err rx0-rx1")
+% figure;hold on;
+% plot(slope_err(:,2))
+% plot(slope_err(:,4))
+% plot(slope_err(:,6))
+% plot(slope_err(:,8))
+% title("slope err rx1-rx2")
