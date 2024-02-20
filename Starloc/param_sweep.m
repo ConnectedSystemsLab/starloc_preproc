@@ -31,8 +31,8 @@ for sat_good = 1:num_periods
     del_phi_repeat_12 = del_phi_repeat_12-phase_offset_12_;
 
     % fit it with a linear function
-    param_01_dict{sat_good} = polyfit(t_repeat, del_phi_repeat_01, 1);
-    param_12_dict{sat_good} = polyfit(t_repeat, del_phi_repeat_12, 1);
+    param_01_dict{sat_good} = polyfit(t_repeat, del_phi_repeat_01, 2);
+    param_12_dict{sat_good} = polyfit(t_repeat, del_phi_repeat_12, 2);
 end
 
 % then get ground truth elevation and azimuth
@@ -102,11 +102,10 @@ loc_0 = d_12*[-sind(alpha)*cosd(beta) ; -cosd(alpha)*cosd(beta) ; -sind(beta)];
 range_1 = vecnorm((loc_3d-(loc_1)')');
 range_0 = vecnorm((loc_3d-(loc_0)')');
 range_2 = vecnorm((loc_3d-(loc_2)')');
-
 del_phi_01_gt = -(range_0-range_1)/lambda*2*pi;
 del_phi_12_gt = -(range_1-range_2)/lambda*2*pi;
-param_01_gt = polyfit(t_sim, del_phi_01_gt, 1);
-param_12_gt = polyfit(t_sim, del_phi_12_gt, 1);
+param_01_gt = polyfit(t_sim, del_phi_01_gt, 2);
+param_12_gt = polyfit(t_sim, del_phi_12_gt, 2);
 % candidates_01 = polyval(param_01, t_sim)+[-2:2]'*2*pi;
 % candidates_12 = polyval(param_12, t_sim)+[-2:2]'*2*pi;
 % dis_01 = mean(candidates_01-del_phi_01_gt,2);
