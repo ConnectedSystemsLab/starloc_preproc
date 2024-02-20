@@ -147,12 +147,12 @@ def doppler_sim(date, path, fc, t_start, t_stop, t_step):
     return sat_dopp_dict, t_list
 
 # Calculate doppler shift given satellite, ground station, start time, stop time, sampling frequency, and carrier frequency
-def calc_doppler(sat, gs, start_time, stop_time, fs, fc, min_ele):
+def calc_doppler(sat, gs, start_time, stop_time, fs, fc=11.325e9, min_ele=60):
     c = 299792458
     ts = load.timescale()
     t = ts.utc(start_time)
     duration = stop_time-start_time
-    n_list = np.arange(0, fs*duration.total_seconds(), 1).astype(int)
+    n_list = np.arange(0, fs*duration.total_seconds() + 1, 1).astype(int)
     doppler_shift = np.empty(len(n_list))
     azimuth = np.empty(len(n_list))
     elevation = np.empty(len(n_list))
@@ -175,3 +175,28 @@ def calc_doppler(sat, gs, start_time, stop_time, fs, fc, min_ele):
     is_visible = sat_ele_max > min_ele
 
     return is_visible, t_list, doppler_shift, azimuth, elevation
+
+def aoa_sim_1_sat(date, path, sat_id, t_start, t_stop, t_step):
+    satellites = load.tle_file(path) # either use path to tle or directly fetch latest tle from the url
+    siebel_lat, siebel_lon = (+40.11389690596162, -88.22484814695467)
+    siebel = wgs84.latlon(siebel_lat, siebel_lon) 
+    farm_lat, farm_lon = (+40.072969193609126, -88.20958051030674)
+    farm = wgs84.latlon(farm_lat, farm_lon, elevation_m=218)
+    # gs =  siebel
+    gs = farm
+
+    # convert from timestamp to datetime
+    # add five hours to convert from CST to UTC
+    t_start += 6*3600
+    t_stop += 6*3600
+    d_1 = datetime.fromtimestamp(t_start)
+    t_start = datetime(d_1.year, d_1.month, d_1.day, d_1.hour, d_1.minute, d_1.second, tzinfo=pytz.UTC)
+
+    d_2 = datetime.fromtimestamp(t_stop)
+    t_stop = datetime(d_2.year, d_2.month, d_2.day, d_2.hour, d_2.minute, d_2.second, tzinfo=pytz.UTC)
+
+    for satellite in satellites:
+        name = satellite.name
+        if name == sat_id:
+            _, t_list, _, az, el = calc_doppler(satellite, gs, t_start, t_stop, 1/t_step)
+            return t_list, az, el
