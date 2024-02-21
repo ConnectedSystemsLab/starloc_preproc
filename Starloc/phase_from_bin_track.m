@@ -1,6 +1,6 @@
 addpath ../Tool_Functions/;
 % change this to the date you want to process
-date_ = "5Feb2024_23-58-08/";
+date_ = "20Feb2024_23_19/";
 disp(["date: ", date_]);
 load(date_+"/info.mat");
 %% file
