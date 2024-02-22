@@ -21,7 +21,18 @@ def call_calibration():
     ref_sig_idx = cal.get_all_refsigidx() # use the get_all_refsigidx() method to get the start and stop index of the reference signal
     print(ref_sig_idx) 
 
+def call_ephemeris_and_unzip():
+    from utils.ephemeris import EphemerisLoader
+    zip_folder_path = '/home/ishani/LeoPNT/USRP_data/2_20/ephemeris'
+    eph = EphemerisLoader(zip_folder_path) # creates an instance of EphemerisLoader. More details in utils/ephemeris.py
+    # eph.unzip_files(output_folder_path) # use the unzip_files() method to unzip the ephemeris files
+    print(eph.is_unzipped())
+    sat_id = 'STARLINK-2377'
+    eph_file_path = eph.find_one_sat(sat_id) # use the find_one_sat() method to find the ephemeris data for the specified satellite ID
+    print(eph_file_path)
+
 if __name__ == "__main__":
 
     # call_imu_data()
-    call_calibration()
+    # call_calibration()
+    call_ephemeris_and_unzip()
