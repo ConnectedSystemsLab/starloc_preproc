@@ -140,7 +140,7 @@ def doppler_sim(date, path, fc, t_start, t_stop, t_step):
         name = satellite.name
         # print sat_cnt and its name
         print(sat_cnt,name)
-        is_visible, t_list, dopp, az, el = calc_doppler(satellite, gs, t_start, t_stop, 1/t_step, fc, min_ele)
+        is_visible, t_list, dopp, az, el, _ = calc_doppler(satellite, gs, t_start, t_stop, 1/t_step, fc, min_ele)
         if is_visible:
             sat_dopp_dict[name] = np.vstack((dopp, az, el))
 
@@ -156,6 +156,7 @@ def calc_doppler(sat, gs, start_time, stop_time, fs, fc=11.325e9, min_ele=60):
     doppler_shift = np.empty(len(n_list))
     azimuth = np.empty(len(n_list))
     elevation = np.empty(len(n_list))
+    range_ = np.empty(len(n_list))
 
     sat_ele_max = -inf
     for n in n_list:
@@ -170,11 +171,12 @@ def calc_doppler(sat, gs, start_time, stop_time, fs, fc=11.325e9, min_ele=60):
             doppler_shift[n] = np.nan
         azimuth[n] = az.degrees
         elevation[n] = alt.degrees
+        range_[n] = the_range.m
         
     t_list = n_list/fs
     is_visible = sat_ele_max > min_ele
 
-    return is_visible, t_list, doppler_shift, azimuth, elevation
+    return is_visible, t_list, doppler_shift, azimuth, elevation, range_
 
 def aoa_sim_1_sat(date, path, sat_id, t_start, t_stop, t_step):
     satellites = load.tle_file(path) # either use path to tle or directly fetch latest tle from the url
@@ -198,5 +200,5 @@ def aoa_sim_1_sat(date, path, sat_id, t_start, t_stop, t_step):
     for satellite in satellites:
         name = satellite.name
         if name == sat_id:
-            _, t_list, _, az, el = calc_doppler(satellite, gs, t_start, t_stop, 1/t_step)
-            return t_list, az, el
+            _, t_list, _, az, el, range_ = calc_doppler(satellite, gs, t_start, t_stop, 1/t_step)
+            return t_list, az, el, range_
