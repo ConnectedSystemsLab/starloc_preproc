@@ -81,8 +81,25 @@ class EphemerisLoader:
             vel = np.array(line.split()[4:7], dtype=float)
             return pos, vel
         else:
-            print(f'Error: Time {time} not found in ephemeris file {eph_file_path}')
-            return None
+            # if the query time doesn't match the time in the file, do interpolation using the two closest times
+            # get the two closest times
+            line_number_l = line_number
+            line_number_r = line_number + 4
+            time_l = convert_ephemeristime_to_utctimestamp(linecache.getline(eph_file_path, line_number_l).split()[0])
+            time_r = convert_ephemeristime_to_utctimestamp(linecache.getline(eph_file_path, line_number_r).split()[0])
+            # get the two closest positions
+            pos_l = np.array(linecache.getline(eph_file_path, line_number_l).split()[1:4], dtype=float)
+            pos_r = np.array(linecache.getline(eph_file_path, line_number_r).split()[1:4], dtype=float)
+            vel_l = np.array(linecache.getline(eph_file_path, line_number_l).split()[4:7], dtype=float)
+            vel_r = np.array(linecache.getline(eph_file_path, line_number_r).split()[4:7], dtype=float)
+            pos = np.array([])
+            for i in range(3):
+                pos = np.append(pos, self.makima(time_l, time_r, pos_l[i], pos_r[i], vel_l[i], vel_r[i], time))
+            vel = np.array([])
+            for i in range(3):
+                vel = np.append(vel, np.interp(time, [time_l, time_r], [vel_l[i], vel_r[i]]))
+            # print(f'Error: Time {time} not found in ephemeris file {eph_file_path}')
+            return pos, vel
            
     def convert_sat_position_velocity_to_skyfieldformat(self, pos, vel, skyfieldtime):
         """
@@ -95,11 +112,33 @@ class EphemerisLoader:
         pos = Distance(km = pos)
         vel = Velocity(km_per_s = vel)
         sat_pos = Geocentric(pos.au, vel.au_per_d, t=skyfieldtime)
+        sat_pos = Geocentric(pos.au, t=skyfieldtime)
         return sat_pos
     
     def is_unzipped(self):
         return os.path.exists(os.path.join(self.file_path, 'unzipped'))
     
+    def makima(self, x_l, x_r, y_l, y_r, y_dot_l, y_dot_r, x_q):
+        """
+        Interpolate using the Makima method.
+
+        :param x_l: Left x value
+        :param x_r: Right x value
+        :param y_l: Left y value
+        :param y_r: Right y value
+        :param y_dot_l: Left y dot value
+        :param y_dot_r: Right y dot value
+        :param x_q: Query x value
+        :return: Interpolated y value
+        """
+        x_l_ = x_l - x_q
+        x_r_ = x_r - x_q
+        M = np.array([[x_l_**3, x_l_**2, x_l_, 1], [x_r_**3, x_r_**2, x_r_, 1], [3*x_l_**2, 2*x_l_, 1, 0], [3*x_r_**2, 2*x_r_, 1, 0]])
+        y = np.array([y_l, y_r, y_dot_l, y_dot_r])
+        a = np.linalg.solve(M, y)
+        y_q = a[3]
+
+        return y_q
 
 
 def convert_ephemeristime_to_utctimestamp(yyyyDOYhhmmss: str) -> float:
