@@ -2,7 +2,7 @@
 % first specify the date here, make sure that res.mat is saved to this
 % folder (also for id doppler, simulation results needed), make sure the
 % root directory is Starloc/
-date_ = "20Feb2024_23_19/";
+date_ = "5Feb2024_23-58-08/";
 % have a look at original tracks
 addpath ../Tool_Functions/;
 sample_rate = 2e6;
@@ -24,11 +24,11 @@ plot(res(:,1),res(:,2),'.');
 % period_starts = [640 780 865];
 % period_ends = [690 850 890];
 % 2_5-5Feb2024_23:58:08
-% period_starts = [0 30 130 190 230 310 370 510 600];
-% period_ends = [20 80 185 230 280 360 430 550 630];
+period_starts = [0 30 130 190 230 310 370 510 600];
+period_ends = [20 80 185 230 280 360 430 550 630];
 % 20Feb2024_23:19:00
-period_starts = [185 230 270 270 320 650 790];
-period_ends = [230 270 320 310 360 680 830];
+% period_starts = [185 230 270 270 320 650 790];
+% period_ends = [230 270 320 310 360 680 830];
 
 num_periods = length(period_starts);
 res_ = {};
@@ -145,7 +145,7 @@ end
 %%%%%%%%%% PART 2: ID %%%%%%%%%%%%%%%
 % doppler sim & identify
 % first load the doppler from date folder
-load(date_+"output_doppler.mat");
+load(date_+"output_doppler_gs(40.57796894, -87.64195092).mat");
 sat_sim_fn = fieldnames(sat_dopp_dict);
 for sat_id = 1:num_periods
     dopp_main = dopp_track_main_dict{sat_id};
@@ -282,4 +282,4 @@ end
 %% test
 % this part has been moved to an independent script, we only save the
 % necessary data
-save(date_+"phase_comp.mat", "dopp_track_dict", "sat_dopp_dict", "id_dict", "variance_dict");
+save(date_+"phase_comp_gs(40.57796894, -87.64195092).mat", "dopp_track_dict", "sat_dopp_dict", "id_dict", "variance_dict");
