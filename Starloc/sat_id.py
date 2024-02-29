@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 import os
 from scipy import io as sio
 import pytz
+from utils.ephemeris import EphemerisLoader
 
 class DopplerTrack(object):
     num_tracks = 0
@@ -178,6 +179,50 @@ def calc_doppler(sat, gs, start_time, stop_time, fs, fc=11.325e9, min_ele=60):
 
     return is_visible, t_list, doppler_shift, azimuth, elevation, range_
 
+def calc_doppler_eph(zip_folder_path, sat_id, gs, start_time, stop_time, fs, fc=11.325e9, min_ele=60):
+    '''
+    param: zip_folder_path: path to the folder containing the ephemeris files
+    param: sat_id: satellite id
+    param: gs: ground station object
+    param: start_time: timestamp of the start time
+    param: stop_time: timestamp of the stop time
+    param: fs: sample rate
+    param: fc: carrier frequency
+    param: min_ele: minimum elevation angle
+    '''
+    eph = EphemerisLoader(zip_folder_path)
+    eph_file_path = eph.find_one_sat(sat_id)
+
+    duration = stop_time - start_time
+    n_list = np.arange(0, fs*duration + 1, 1).astype(int)
+    azimuth = np.empty(len(n_list))
+    elevation = np.empty(len(n_list))
+    range_ = np.empty(len(n_list))
+
+    ts = load.timescale()
+    d_1 = datetime.utcfromtimestamp(start_time)
+    t_start = datetime(d_1.year, d_1.month, d_1.day, d_1.hour, d_1.minute, d_1.second, d_1.microsecond, tzinfo=pytz.UTC)
+    t = ts.utc(t_start)
+
+    sat_ele_max = -inf
+    for n in n_list:
+        time = start_time + n/fs
+        pos, vel = eph.get_sat_position_velocity_at_t(eph_file_path, time)
+        skyfield_pos = eph.convert_sat_position_velocity_to_skyfieldformat(pos, vel, t)
+
+        dist = skyfield_pos - gs.at(t)
+        alt, az, the_range = dist.altaz()
+        azimuth[n] = az.degrees
+        elevation[n] = alt.degrees
+        range_[n] = the_range.m
+        t = ts.utc(t.utc_datetime()+timedelta(milliseconds=1000/fs))
+        
+    t_list = n_list/fs
+    is_visible = sat_ele_max > min_ele
+    doppler_shift = None
+
+    return is_visible, t_list, doppler_shift, azimuth, elevation, range_
+
 def aoa_sim_1_sat(date, path, sat_id, t_start, t_stop, t_step):
     satellites = load.tle_file(path) # either use path to tle or directly fetch latest tle from the url
     siebel_lat, siebel_lon = (+40.11389690596162, -88.22484814695467)
@@ -185,20 +230,38 @@ def aoa_sim_1_sat(date, path, sat_id, t_start, t_stop, t_step):
     farm_lat, farm_lon = (+40.072969193609126, -88.20958051030674)
     farm = wgs84.latlon(farm_lat, farm_lon, elevation_m=218)
     # gs =  siebel
-    gs = farm
+    farm_imu = wgs84.latlon(+40.07216262817384, -88.20952606201173, elevation_m=182.69)
+    gs = farm_imu
 
     # convert from timestamp to datetime
     # add five hours to convert from CST to UTC
     t_start += 6*3600
     t_stop += 6*3600
     d_1 = datetime.fromtimestamp(t_start)
-    t_start = datetime(d_1.year, d_1.month, d_1.day, d_1.hour, d_1.minute, d_1.second, tzinfo=pytz.UTC)
+    t_start = datetime(d_1.year, d_1.month, d_1.day, d_1.hour, d_1.minute, d_1.second, d_1.microsecond, tzinfo=pytz.UTC)
 
     d_2 = datetime.fromtimestamp(t_stop)
-    t_stop = datetime(d_2.year, d_2.month, d_2.day, d_2.hour, d_2.minute, d_2.second, tzinfo=pytz.UTC)
+    t_stop = datetime(d_2.year, d_2.month, d_2.day, d_2.hour, d_2.minute, d_2.second, d_2.microsecond, tzinfo=pytz.UTC)
 
     for satellite in satellites:
         name = satellite.name
         if name == sat_id:
             _, t_list, _, az, el, range_ = calc_doppler(satellite, gs, t_start, t_stop, 1/t_step)
+            return t_list, az, el, range_
+
+def aoa_sim_1_sat_eph(date, path, sat_id, t_start, t_stop, t_step):
+    satellites = load.tle_file(path) # either use path to tle or directly fetch latest tle from the url
+    siebel_lat, siebel_lon = (+40.11389690596162, -88.22484814695467)
+    siebel = wgs84.latlon(siebel_lat, siebel_lon) 
+    farm_lat, farm_lon = (+40.072969193609126, -88.20958051030674)
+    farm = wgs84.latlon(farm_lat, farm_lon, elevation_m=218)
+    farm_imu = wgs84.latlon(+40.07216262817384, -88.20952606201173, elevation_m=182.69)
+    gs = farm_imu
+
+    zip_folder_path = '/home/ishani/LeoPNT/USRP_data/2_20/ephemeris'
+
+    for satellite in satellites:
+        name = satellite.name
+        if name == sat_id:
+            _, t_list, _, az, el, range_ = calc_doppler_eph(zip_folder_path, sat_id, gs, t_start, t_stop, 1/t_step)
             return t_list, az, el, range_
