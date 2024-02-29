@@ -26,6 +26,7 @@ plot(res(:,1),res(:,2),'.');
 % 2_5-5Feb2024_23:58:08
 % period_starts = [0 30 130 190 230 310 370 510 600];
 % period_ends = [20 80 185 230 280 360 430 550 630];
+% 20Feb2024_23:19:00
 period_starts = [185 230 270 270 320 650 790];
 period_ends = [230 270 320 310 360 680 830];
 
@@ -144,7 +145,7 @@ end
 %%%%%%%%%% PART 2: ID %%%%%%%%%%%%%%%
 % doppler sim & identify
 % first load the doppler from date folder
-load(date_+"output_doppler_.mat");
+load(date_+"output_doppler.mat");
 sat_sim_fn = fieldnames(sat_dopp_dict);
 for sat_id = 1:num_periods
     dopp_main = dopp_track_main_dict{sat_id};
@@ -161,6 +162,7 @@ for sat_id = 1:num_periods
 end
 % id
 id_dict = {};
+variance_dict = {};
 freq_offset = zeros(num_periods, 1);
 for sat_id = 1:num_periods
     min_var = inf;
@@ -182,6 +184,7 @@ for sat_id = 1:num_periods
         if dopp_var < min_var
             min_var = dopp_var;
             id_dict{sat_id} = name;
+            variance_dict{sat_id} = dopp_var;
             freq_offset(sat_id) = mean(-(dopp_main(:,2)-dopp_tar));
         end
     end
@@ -203,7 +206,6 @@ for sat_id = 1:num_periods
     plot(dopp_main(:,1), dopp_main(:,2)+freq_offset(sat_id), '.')
 end
 % save the figure
-savefig(date_+"/id.fig");
 %% process delta_phi
 figure;
 for sat_good = 1:num_periods
@@ -280,4 +282,4 @@ end
 %% test
 % this part has been moved to an independent script, we only save the
 % necessary data
-save(date_+"phase_comp.mat", "dopp_track_dict", "sat_dopp_dict", "id_dict");
+save(date_+"phase_comp.mat", "dopp_track_dict", "sat_dopp_dict", "id_dict", "variance_dict");
