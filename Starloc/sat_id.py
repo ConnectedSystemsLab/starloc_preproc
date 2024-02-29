@@ -240,9 +240,9 @@ def get_dopp_dict(fc, min_ele, gs, timestep_list, visible_sats):
             else:
                 doppler_shift = np.nan
             if name in sat_dopp_dict:
-                sat_dopp_dict[name] = np.vstack((sat_dopp_dict[name], [doppler_shift, alt.degrees, az.degrees]))
+                sat_dopp_dict[name] = np.vstack((sat_dopp_dict[name], [doppler_shift, az.degrees, alt.degrees]))
             else:
-                sat_dopp_dict[name] = np.array([doppler_shift, alt.degrees, az.degrees])
+                sat_dopp_dict[name] = np.array([doppler_shift, az.degrees, alt.degrees])
 
     # making sat_dopp_dict compatible with format required for phase_from_bin.m
     for key in sat_dopp_dict:
