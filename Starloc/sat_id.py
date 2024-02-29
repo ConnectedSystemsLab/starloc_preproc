@@ -121,9 +121,8 @@ def doppler_sim(date, path, fc, t_start, t_stop, t_step):
     siebel = wgs84.latlon(siebel_lat, siebel_lon) 
     farm_lat, farm_lon = (+40.072969193609126, -88.20958051030674)
     farm = wgs84.latlon(farm_lat, farm_lon, elevation_m=218)
-    new_gs = wgs84.latlon(39.93430781827157, -87.96985561593543, elevation_m=218)
     # gs =  siebel
-    gs = new_gs
+    gs = farm
 
     # convert from timestamp to datetime
     # add five hours to convert from CST to UTC
