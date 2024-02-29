@@ -1,5 +1,6 @@
 from math import inf
 from telnetlib import DO
+from tracemalloc import stop
 from scipy import io as sio
 from scipy.optimize import linear_sum_assignment
 import numpy as np
@@ -153,6 +154,7 @@ def calc_doppler(sat, gs, start_time, stop_time, fs, fc=11.325e9, min_ele=60):
     t = ts.utc(start_time)
     duration = stop_time-start_time
     n_list = np.arange(0, fs*duration.total_seconds() + 1, 1).astype(int)
+    
     doppler_shift = np.empty(len(n_list))
     azimuth = np.empty(len(n_list))
     elevation = np.empty(len(n_list))
@@ -177,6 +179,74 @@ def calc_doppler(sat, gs, start_time, stop_time, fs, fc=11.325e9, min_ele=60):
     is_visible = sat_ele_max > min_ele
 
     return is_visible, t_list, doppler_shift, azimuth, elevation, range_
+
+def faster_doppler_sim(date, path, fc, t_start, t_stop, t_step, ground_station=None):
+    min_ele = 70 # degrees
+    
+    satellites = load.tle_file(path) # either use path to tle or directly fetch latest tle from the url
+    print("number of Starlink satellites loaded " + str(len(satellites)))
+    open_satfile_list = []
+    siebel_lat, siebel_lon = (+40.11389690596162, -88.22484814695467)
+    siebel = wgs84.latlon(siebel_lat, siebel_lon) 
+    farm_lat, farm_lon = (+40.072969193609126, -88.20958051030674)
+    farm = wgs84.latlon(farm_lat, farm_lon, elevation_m=218)
+    # gs =  siebel
+    if ground_station is None:
+        gs = farm 
+    else:
+        new_gs = wgs84.latlon(ground_station[0], ground_station[1])
+        gs = new_gs
+
+    ts = load.timescale()
+    start_time_utc = datetime.fromtimestamp(t_start, tz=pytz.utc)
+    duration = t_stop - t_start
+    print("Duration in secs: ", duration)
+
+    seconds_step_list = np.arange(start_time_utc.second, # seconds list begins from the second of the start time
+                                  (start_time_utc.second+start_time_utc.microsecond*1e-6)+duration, 
+                                  t_step) 
+    timestep_list = ts.utc(start_time_utc.year, start_time_utc.month, start_time_utc.day, # skyfield utc time list
+                           start_time_utc.hour, start_time_utc.minute, seconds_step_list)
+    
+    t_list = seconds_step_list-start_time_utc.second # seconds list relative to start time
+
+    # first get satellites that are visible
+    visible_sats = []
+    for t in timestep_list:
+        for satellite in satellites:
+            dist = (satellite-gs).at(t)
+            alt, az, distance = dist.altaz()
+            if alt.degrees > min_ele and satellite not in visible_sats:
+                visible_sats.append(satellite)
+    print("Number of visible satellites: ", len(visible_sats))
+
+    sat_dopp_dict = get_dopp_dict(fc, min_ele, gs, timestep_list, visible_sats)
+
+    return sat_dopp_dict, t_list
+
+def get_dopp_dict(fc, min_ele, gs, timestep_list, visible_sats):
+    c = 299792458
+    sat_dopp_dict = {}
+    for t in timestep_list:
+        for satellite in visible_sats:
+            name = satellite.name
+            dist = (satellite-gs).at(t)
+            alt, az, distance = dist.altaz()
+            if alt.degrees > min_ele-10: # for a satellite that is visible, we want to record its doppler shift for longer time so id-matching does not fail
+                # calculate doppler shift
+                _, _, the_range, _, _, range_rate = dist.frame_latlon_and_rates(gs)
+                doppler_shift = -fc*range_rate.km_per_s*1000/c
+            else:
+                doppler_shift = np.nan
+            if name in sat_dopp_dict:
+                sat_dopp_dict[name] = np.vstack((sat_dopp_dict[name], [doppler_shift, alt.degrees, az.degrees]))
+            else:
+                sat_dopp_dict[name] = np.array([doppler_shift, alt.degrees, az.degrees])
+
+    # making sat_dopp_dict compatible with format required for phase_from_bin.m
+    for key in sat_dopp_dict:
+        sat_dopp_dict[key] = sat_dopp_dict[key].T
+    return sat_dopp_dict
 
 def aoa_sim_1_sat(date, path, sat_id, t_start, t_stop, t_step):
     satellites = load.tle_file(path) # either use path to tle or directly fetch latest tle from the url
