@@ -181,8 +181,8 @@ def calc_doppler(sat, gs, start_time, stop_time, fs, fc=11.325e9, min_ele=60):
 
     return is_visible, t_list, doppler_shift, azimuth, elevation, range_
 
-def faster_doppler_sim(date, path, fc, t_start, t_stop, t_step, ground_station=None):
-    min_ele = 70 # degrees
+def faster_doppler_sim(date, path, fc, t_start, t_stop, t_step, ground_station=None, min_ele=70):
+    min_ele = min_ele # degrees
     
     satellites = load.tle_file(path) # either use path to tle or directly fetch latest tle from the url
     print("number of Starlink satellites loaded " + str(len(satellites)))

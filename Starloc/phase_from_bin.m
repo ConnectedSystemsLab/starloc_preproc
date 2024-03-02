@@ -145,7 +145,7 @@ end
 %%%%%%%%%% PART 2: ID %%%%%%%%%%%%%%%
 % doppler sim & identify
 % first load the doppler from date folder
-load(date_+"output_doppler_gs(40.57796894, -87.64195092).mat");
+load(date_+"output_doppler.mat");
 sat_sim_fn = fieldnames(sat_dopp_dict);
 for sat_id = 1:num_periods
     dopp_main = dopp_track_main_dict{sat_id};
@@ -264,6 +264,9 @@ del_phi_repeat_01 = del_phi_repeat_01+2*pi*(min_idx-3);
 del_phi_repeat_12 = del_phi_repeat_12+2*pi*(min_idx-3);
 param_01 = polyfit(t_repeat, del_phi_repeat_01, 2);
 param_12 = polyfit(t_repeat, del_phi_repeat_12, 2);
+param_01__ = polyfit(t_repeat, del_phi_repeat_01, 1);
+param_12__ = polyfit(t_repeat, del_phi_repeat_12, 1);
+phase_diff_param{sat_good} = [param_01__; param_12__];
 % plot
 subplot(3,3,sat_good);hold on; 
 plot(t_repeat,del_phi_repeat_01, '.',DisplayName="angle(rx0/rx1) - real")
@@ -282,4 +285,4 @@ end
 %% test
 % this part has been moved to an independent script, we only save the
 % necessary data
-save(date_+"phase_comp_gs(40.57796894, -87.64195092).mat", "dopp_track_dict", "sat_dopp_dict", "id_dict", "variance_dict");
+save(date_+"phase_comp_satid.mat", "dopp_track_dict", "sat_dopp_dict", "id_dict", "variance_dict", "phase_diff_param");
