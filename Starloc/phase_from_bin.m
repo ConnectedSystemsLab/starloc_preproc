@@ -26,6 +26,9 @@ plot(res(:,1),res(:,2),'.');
 % 2_5-5Feb2024_23:58:08
 period_starts = [0 30 130 190 230 310 370 510 600];
 period_ends = [20 80 185 230 280 360 430 550 630];
+% 20Feb2024_23:19:00
+% period_starts = [185 230 270 270 320 650 790];
+% period_ends = [230 270 320 310 360 680 830];
 
 num_periods = length(period_starts);
 res_ = {};
@@ -159,6 +162,7 @@ for sat_id = 1:num_periods
 end
 % id
 id_dict = {};
+variance_dict = {};
 freq_offset = zeros(num_periods, 1);
 for sat_id = 1:num_periods
     min_var = inf;
@@ -180,6 +184,7 @@ for sat_id = 1:num_periods
         if dopp_var < min_var
             min_var = dopp_var;
             id_dict{sat_id} = name;
+            variance_dict{sat_id} = dopp_var;
             freq_offset(sat_id) = mean(-(dopp_main(:,2)-dopp_tar));
         end
     end
@@ -200,7 +205,7 @@ for sat_id = 1:num_periods
     dopp_main = dopp_track_main_dict{sat_id};
     plot(dopp_main(:,1), dopp_main(:,2)+freq_offset(sat_id), '.')
 end
-
+% save the figure
 %% process delta_phi
 figure;
 for sat_good = 1:num_periods
@@ -259,6 +264,9 @@ del_phi_repeat_01 = del_phi_repeat_01+2*pi*(min_idx-3);
 del_phi_repeat_12 = del_phi_repeat_12+2*pi*(min_idx-3);
 param_01 = polyfit(t_repeat, del_phi_repeat_01, 2);
 param_12 = polyfit(t_repeat, del_phi_repeat_12, 2);
+param_01__ = polyfit(t_repeat, del_phi_repeat_01, 1);
+param_12__ = polyfit(t_repeat, del_phi_repeat_12, 1);
+phase_diff_param{sat_good} = [param_01__; param_12__];
 % plot
 subplot(3,3,sat_good);hold on; 
 plot(t_repeat,del_phi_repeat_01, '.',DisplayName="angle(rx0/rx1) - real")
@@ -277,4 +285,4 @@ end
 %% test
 % this part has been moved to an independent script, we only save the
 % necessary data
-save(date_+"phase_comp.mat", "dopp_track_dict", "sat_dopp_dict", "id_dict");
+save(date_+"phase_comp_satid.mat", "dopp_track_dict", "sat_dopp_dict", "id_dict", "variance_dict", "phase_diff_param");
