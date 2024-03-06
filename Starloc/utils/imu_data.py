@@ -48,6 +48,37 @@ class IMUData:
             yaw.append(y)
         return roll, pitch, yaw
     
+    def get_latlonalt_(self, start_line=None, end_line=None):
+        """
+        Get the latitude, longitude, altitude data from the imu file. if start_line and end_line are not specified, the function will read the whole file. if data is already loaded, it will not read the file again.
+        :param start_line: start line of the data to read
+        :param end_line: end line of the data to read
+        """
+        if start_line is None:
+            start_line = 0
+        if end_line is None:
+            end_line = -1
+        if not hasattr(self, 'data'):
+            self.read_imu_data(start_line, end_line)
+        lat = []
+        lon = []
+        alt = []
+        for line in self.data:
+            cnt = line.count('|')
+            if cnt != 5:
+                # when the imu is just started, it doesn't have the lat, lon and alt data
+                continue
+            line = line.split('|')
+            latlon = line[3].split(',')
+            altt = line[4]
+            la = float(latlon[0].split(': ')[1])
+            lo = float(latlon[1].split(': ')[1])
+            al = float(altt.split(': ')[1])
+            lat.append(la)
+            lon.append(lo)
+            alt.append(al)
+        return lat, lon, alt
+
     def get_utctimestamp(self, start_line=None, end_line=None):
         """     
         Get the timestamp data from the imu file. if start_line and end_line are not specified, the function will read the whole file. if data is already loaded, it will not read the file again.

@@ -71,6 +71,58 @@ class CalibrationSignal:
         # plt.show()
             
         return start_index, stop_index
+
+    def get_refsigidx_pw_par(self, nfft=2**15, num_samples_per_step=None, start_from=None, ref_sig_thresh=20):
+        """
+        This is a modified version of get_refsigidx, since sometimes it fails. (I guess is the tx_bin is a bit different from the real captured signal). Instead, look at the PAR(peak to average ratio) of the signal. If the PAR is greater than ref_sig_thresh, the signal is considered as the reference signal.
+        """
+        
+        start_index = None
+        stop_index = None
+        no_sig_count = 0
+        if num_samples_per_step == None: 
+            num_samples_per_step = int(nfft)
+        
+        if start_from is None:
+            idx = 0
+        else:
+            idx = int(start_from)
+
+        # bin to look at for the tx freq
+        # tx_bin = round(((self.tx_freq-self.center_freq_rx) / (self.sample_rate / nfft)))
+        # don't look at any specific bin, just look at the PAR of the signal
+        # print("tx_bin: ", tx_bin)
+        while True:
+            # read the signal from the file
+            sig_seg = read_dat_file(self.file_path, num_samples_per_step, idx)
+            if len(sig_seg) < num_samples_per_step:
+                break
+            # calc the fft
+            sig_fft = np.fft.fft(sig_seg)
+            # calc the power spectral density
+            psd = np.abs(sig_fft)
+            # find mean of the psd
+            mean_psd = np.mean(psd)
+            if np.max(psd) > mean_psd * ref_sig_thresh:
+                if start_index is None:
+                    start_index = idx
+                else:
+                    stop_index = idx
+            else:
+                if stop_index is not None and start_index is not None:
+                    no_sig_count = no_sig_count + 1
+                    # break if no ref signal is found for 2 consecutive reads and the start and stop indexes have already been found
+                    if no_sig_count > 2:
+                        break
+            idx += num_samples_per_step
+
+            # plot psd for debugging.
+            # plt.cla()
+            # plt.plot(psd)
+            # plt.pause(0.05)
+        # plt.show()
+            
+        return start_index, stop_index
     
     def get_all_refsigidx(self, nfft=2**15, num_samples_per_step=None, ref_sig_thresh=20):
         """
@@ -84,7 +136,8 @@ class CalibrationSignal:
         ref_sig_indexes = []
         start_idx = 0
         while True:
-            start_idx, stop_idx = self.get_refsigidx(nfft, num_samples_per_step, start_idx, ref_sig_thresh)
+            # start_idx, stop_idx = self.get_refsigidx(nfft, num_samples_per_step, start_idx, ref_sig_thresh)
+            start_idx, stop_idx = self.get_refsigidx_pw_par(nfft, num_samples_per_step, start_idx, ref_sig_thresh)
             if start_idx is None or stop_idx is None:
                 break
             ref_sig_len = (stop_idx - start_idx) / self.sample_rate
