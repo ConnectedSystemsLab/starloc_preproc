@@ -305,13 +305,10 @@ def aoa_sim_1_sat(date, path, sat_id, t_start, t_stop, t_step):
     gs = farm_imu
 
     # convert from timestamp to datetime
-    # add five hours to convert from CST to UTC
-    t_start += 6*3600
-    t_stop += 6*3600
-    d_1 = datetime.fromtimestamp(t_start)
+    d_1 = datetime.utcfromtimestamp(t_start)
     t_start = datetime(d_1.year, d_1.month, d_1.day, d_1.hour, d_1.minute, d_1.second, d_1.microsecond, tzinfo=pytz.UTC)
 
-    d_2 = datetime.fromtimestamp(t_stop)
+    d_2 = datetime.utcfromtimestamp(t_stop)
     t_stop = datetime(d_2.year, d_2.month, d_2.day, d_2.hour, d_2.minute, d_2.second, d_2.microsecond, tzinfo=pytz.UTC)
 
     for satellite in satellites:
