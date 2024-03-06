@@ -1,6 +1,6 @@
 addpath ../Tool_Functions/;
 % change this to the date you want to process
-date_ = "20Feb2024_23_19/";
+date_ = "6Mar2024_04_19/";
 disp(["date: ", date_]);
 load(date_+"/info.mat");
 %% file
@@ -13,18 +13,18 @@ f = linspace(-sample_rate/2, sample_rate/2, num_read_samples);
 %% track doppler
 res = [];
 start_idx = 1;
-thresh = 3;
+thresh = 3.5;
 if_visual = 0;
-buffer = 0.03 * 2e6; % number of samples to add before and after the reference signal when looking for center tones
+buffer = 0.01 * 2e6; % number of samples to add before and after the reference signal when looking for center tones
 while start_idx < t_end*sample_rate
     sig_0 = read_complex_binary2(f_0, num_read_samples, start_idx);
     sig_1 = read_complex_binary2(f_1, num_read_samples, start_idx);
     sig_2 = read_complex_binary2(f_2, num_read_samples, start_idx);
-    start_idx = start_idx+num_read_samples/2;
     % check whether current time is in the reference signal, if so, skip
     later_than_begin = start_idx >= ref_sig_idx(:,1)-buffer;
     ealier_than_end = start_idx <= ref_sig_idx(:,2)+buffer;
     if find(later_than_begin & ealier_than_end)
+        start_idx = start_idx+num_read_samples/2;
         continue;
     end
     sig_0_fft = fftshift(fft(sig_0));
@@ -40,11 +40,11 @@ while start_idx < t_end*sample_rate
     idx_0 = sig_0_fft_abs>thresh*pw_avg_0;
     idx_1 = sig_1_fft_abs>thresh*pw_avg_1;
     idx_2 = sig_2_fft_abs>thresh*pw_avg_2;
-    if length(find(idx_0)) > 300 || length(find(idx_1)) > 300 || length(find(idx_2)) > 300
-        continue;
-    end
+    % if length(find(idx_0)) > 300 || length(find(idx_1)) > 300 || length(find(idx_2)) > 300
+    %     continue;
+    % end
     idx_com = intersect(intersect(find(idx_0), find(idx_1)), find(idx_2));
-    t = (start_idx-num_read_samples/2)/sample_rate
+    t = (start_idx+num_read_samples/2)/sample_rate
     for ii = 1:length(idx_com)
         idx_com_ii = idx_com(ii);
         res = [res ; [t idx_com_ii sig_0_fft(idx_com_ii) sig_1_fft(idx_com_ii) sig_2_fft(idx_com_ii)]];
@@ -57,8 +57,10 @@ while start_idx < t_end*sample_rate
         pause(.01);
         clf;
     end
+    start_idx = start_idx+num_read_samples/2;
 end
 save(date_+'res.mat','res');
+fprintf("done, result saved in "+date_+'res.mat, total %d points\n', size(res,1));
 quit (0,"force");
 %% track & connect
 dopp_track_dict = {};
