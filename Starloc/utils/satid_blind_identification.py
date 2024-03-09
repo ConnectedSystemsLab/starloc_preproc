@@ -23,7 +23,7 @@ def sum_dist(point, sattrajs_coeffs):
         dist += point_to_line_dist(x, y, line[0], line[1])
     return dist
 
-def get_candidate_locs(start_time, time_arr, tle_path, fig_pointer=None):
+def get_candidate_locs(start_time, time_arr, tle_path, search_dist_bound=150, fig_pointer=None):
     ts = load.timescale()
     satellites = load.tle_file(tle_path)
     time_arr = np.array(time_arr)
@@ -74,7 +74,7 @@ def get_candidate_locs(start_time, time_arr, tle_path, fig_pointer=None):
             min_dist, min_dist_idx = np.min(dist), np.argmin(dist)
             # print('Min Dist:', min_dist, "Point", point, "Coordinates:", gs_subset[min_dist_idx])
             # if the minimum distance is less than 100 km, add the point to the current centroid, else add the point as a new centroid
-            if min_dist < 150:
+            if min_dist < search_dist_bound:
                 gs_groups_[i].append([gs_subset[min_dist_idx][0], gs_subset[min_dist_idx][1]])
                 sat_groups[i].append(sat_superset[subset_idx+1][min_dist_idx])
             else:
