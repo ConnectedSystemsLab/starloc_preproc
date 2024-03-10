@@ -317,6 +317,23 @@ def aoa_sim_1_sat(date, path, sat_id, t_start, t_stop, t_step):
             _, t_list, _, az, el, range_ = calc_doppler(satellite, gs, t_start, t_stop, 1/t_step)
             return t_list, az, el, range_
 
+def dopp_sim_1_sat(date, path, sat_id, t_start, t_stop, t_step, lat, lon, elevation):
+    satellites = load.tle_file(path)
+    gs = wgs84.latlon(lat, lon, elevation_m=elevation)
+
+    # convert from timestamp to datetime
+    d_1 = datetime.utcfromtimestamp(t_start)
+    t_start = datetime(d_1.year, d_1.month, d_1.day, d_1.hour, d_1.minute, d_1.second, d_1.microsecond, tzinfo=pytz.UTC)
+
+    d_2 = datetime.utcfromtimestamp(t_stop)
+    t_stop = datetime(d_2.year, d_2.month, d_2.day, d_2.hour, d_2.minute, d_2.second, d_2.microsecond, tzinfo=pytz.UTC)
+
+    for satellite in satellites:
+        name = satellite.name
+        if name == sat_id:
+            _, t_list, dopp, azimuth, elevation, the_range = calc_doppler(satellite, gs, t_start, t_stop, 1/t_step)
+            return t_list, dopp, azimuth, elevation, the_range
+
 def aoa_sim_1_sat_eph(date, path, sat_id, t_start, t_stop, t_step):
     satellites = load.tle_file(path) # either use path to tle or directly fetch latest tle from the url
     siebel_lat, siebel_lon = (+40.11389690596162, -88.22484814695467)

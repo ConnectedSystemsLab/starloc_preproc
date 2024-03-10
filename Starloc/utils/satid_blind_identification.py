@@ -171,6 +171,140 @@ def get_candidate_locs(start_time, time_arr, tle_path, search_dist_bound=150, fi
 
     return gs_groups, coarse_gs, sat_groups
         
+def get_candidate_locs_jida(start_time, time_arr, tle_path, search_dist_bound=150, fig_pointer=None):
+    # this makes sure every single possible cluster can be found
+    ts = load.timescale()
+    satellites = load.tle_file(tle_path)
+    time_arr = np.array(time_arr)
+    sat_visible_time_arr = ts.utc(start_time.year, start_time.month, start_time.day, start_time.hour, start_time.minute, start_time.second+start_time.microsecond/1e6+time_arr)
+    gs_superset = []
+    sat_superset = []
+    for time in sat_visible_time_arr:
+        gs = []
+        sat_ = []
+        for sat in satellites:
+            geocentric = sat.at(time)
+            lat, lon = wgs84.latlon_of(geocentric)
+            #only consider locations in in USA
+            if lat.degrees > 24.396308 and lat.degrees < 49.384358 and lon.degrees > -125.0 and lon.degrees < -66.93457: # setting boundaries for USA
+                gs.append([lat.degrees, lon.degrees])
+                # sat_.append(sat.name)
+                sat_.append(sat)
+        gs_superset.append(gs)
+        sat_superset.append(sat_)
+    
+    num_periods = len(sat_visible_time_arr)
+    len_list = [len(gs_superset[i]) for i in range(num_periods)]
+    # start with the first set of ground stations and satellites obtained at the first time in time_arr
+    group_mat = np.zeros((len_list[0], 1))
+    for i in range(len_list[0]):
+        group_mat[i, 0] = i
+    group_mat = group_mat.astype(int)
+
+    for subset_idx, len_subset in enumerate(len_list[1:]):
+        cur_super_set = np.array(gs_superset[1+subset_idx])
+        cur_group_len = np.size(group_mat, 1)
+        cur_group_num = np.size(group_mat, 0)
+        group_mat_ = np.array([]).reshape(0, cur_group_len+1)
+        for i in range(len_subset):
+            lat2 = np.deg2rad(cur_super_set[i, 0])
+            lon2 = np.deg2rad(cur_super_set[i, 1])
+            
+            # search for all previous points in the group, find the maximum distance of the new point from all of the previous points
+            dist = np.zeros(cur_group_num)
+            for j in range(cur_group_len):
+                superset_j = np.array(gs_superset[j])
+                lat1 = np.deg2rad(superset_j[group_mat[:, j].astype(int), 0])
+                lon1 = np.deg2rad(superset_j[group_mat[:, j].astype(int), 1])
+                dist = np.maximum(dist, np.arccos(np.sin(lat1)*np.sin(lat2)+np.cos(lat1)*np.cos(lat2)*np.cos(lon2-lon1))*6371)
+            prev_row_idxs = np.where(dist < search_dist_bound)[0]
+            for prev_row in prev_row_idxs:
+                group_mat_ = np.vstack((group_mat_, np.hstack((group_mat[prev_row], i))))
+        
+        group_mat = group_mat_.astype(int)
+
+    print('Initial number of candidate location clusters:', np.size(group_mat, 0))
+
+    world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+    if fig_pointer is None:
+        fig, ax = plt.subplots(1, 1, figsize=(10, 6))
+    else:
+        fig, ax = fig_pointer[0], fig_pointer[1]
+    world.plot(ax=ax)
+    # only show USA
+    ax.set_xlim([-125.0, -66.93457])
+    ax.set_ylim([24.396308, 49.384358])
+    color = ['red', 'blue', 'grey', 'yellow', 'orange', 'purple', 'pink', 'black']
+
+    gs_groups = []
+    sat_groups = []
+    coarse_gs = []
+    for i in range(np.size(group_mat, 0)):
+        gs_group = []
+        sat_group = []
+        for j in range(np.size(group_mat, 1)):
+            gs_group.append(gs_superset[j][group_mat[i, j]])
+            sat_group.append(sat_superset[j][group_mat[i, j]])
+        gs_groups.append(gs_group)
+        sat_groups.append(sat_group)
+        gs_group = np.array(gs_group)
+        ax.scatter(gs_group[:,1], gs_group[:,0], c=color[int(i%len(color))], s=5)
+        centroid = np.mean(gs_group, axis=0)
+        coarse_gs.append(centroid)
+        ax.scatter(centroid[1], centroid[0], c='purple', marker='x', s=10)
+
+    # for i, sets in enumerate(gs_groups): # sets == group/cluster 
+    #     # get sets that are not possible because they do not see satellites at all times in time_arr
+    #     if len(sets) < len(time_arr):
+    #         remove_set.append(i)
+    #         continue
+    #     # print(i, 'Sets:', len(sets))
+    #     possible_groups += 1
+    #     sets = np.array(sets)
+    #     ax.scatter(sets[:,1], sets[:,0], c=color[int(i%len(color))], s=5)
+    #     # also plot the centroid
+    #     centroid = np.mean(sets, axis=0)
+    #     coarse_gs.append(centroid) # This is the array of possible coarse locations of ground receiver
+    #     ax.scatter(centroid[1], centroid[0], c='purple', marker='x', s=10)
+
+    print('Possible:', np.size(group_mat, 0))
+
+    ## Plotting satellite trajectory lines for sats in each group. 
+    ##Also, finding the point on earth that minimizes the distance to the satellite trajectory lines
+    for gp_idx,group in enumerate(sat_groups):
+        lines_coeffs = []
+        sats_name_arr = []
+        for i,sat in enumerate(group):
+            sats_name_arr.append(sat.name)
+            # get satellite subpoints around 10 seconds of the time of highest elevation at 0.1 sec steps
+            time_of_highest_elevation = sat_visible_time_arr[i].utc_datetime()
+            span = np.arange(-5, 5, 0.1)
+            single_sat_time_arr = ts.utc(time_of_highest_elevation.year, time_of_highest_elevation.month, time_of_highest_elevation.day, 
+                time_of_highest_elevation.hour, time_of_highest_elevation.minute, time_of_highest_elevation.second+time_of_highest_elevation.microsecond/1e6+span)
+            subpoints = wgs84.latlon_of(sat.at(single_sat_time_arr))
+            x = subpoints[1].degrees # longitudes
+            y = subpoints[0].degrees # latitudes
+            plt.plot(x, y, '--', color='black')
+            plt.text(x[-1], y[-1], sat.name, fontsize=5, color='black')
+            # polyfit line to x,y
+            sat_traj_line = np.polyfit(x, y, 1)
+            # print('Satellite Trajectory Line slope:', sat_traj_line[0], "Intercept:", sat_traj_line[1])
+            # find a point on earth that minimizes the distance to the satellite trajectory lines
+            lines_coeffs.append(sat_traj_line)
+
+        #minimize distance to the trajectroy lines
+        init_point = np.mean(gs_groups[gp_idx], axis=0)
+        res = minimize(sum_dist, [init_point[1]-1, init_point[0]-1], args=(lines_coeffs), method = 'Nelder-Mead')
+        print("Centroid of group ", gp_idx, ":", coarse_gs[gp_idx])
+        print('Point that minimizes distance to each satellite trajectory :', res.x[1], res.x[0])
+        
+        #plot the point
+        ax.scatter(res.x[0], res.x[1], c='yellow', marker='x', s=10)
+        print('sats in group:', sats_name_arr)
+        print("=====================================================================")
+
+    return gs_groups, coarse_gs, sat_groups
+    
 
 def get_phase_diff_params_allsatsingroups(coarse_gs, satdictlist_for_each_gs, time_arr, orientation_dict=None, receiver_param_dict=None):
     # calc phase diff 01, 02, 12 for each satellite in each gs group
