@@ -7,6 +7,7 @@ import scipy.io as sio
 import pytz
 import copy
 from scipy.optimize import minimize
+from shapely.geometry import Point
 
 ## funcs for distance optimization 
 def point_to_line_dist(x, y, m, c):
@@ -155,8 +156,11 @@ def get_candidate_locs(start_time, time_arr, tle_path, search_dist_bound=150, fi
 
     return gs_groups, coarse_gs, sat_groups
         
-def get_candidate_locs_jida(start_time, time_arr, tle_path, search_dist_bound=150, fig_pointer=None):
+def get_candidate_locs_jida(start_time, time_arr, is_middle_arr, tle_path, search_dist_bound=150, fig_pointer=None):
     # this makes sure every single possible cluster can be found
+    world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+    us_boundary = world[world['iso_a3'] == 'USA']
+
     ts = load.timescale()
     satellites = load.tle_file(tle_path)
     time_arr = np.array(time_arr)
@@ -170,7 +174,9 @@ def get_candidate_locs_jida(start_time, time_arr, tle_path, search_dist_bound=15
             geocentric = sat.at(time)
             lat, lon = wgs84.latlon_of(geocentric)
             #only consider locations in in USA
-            if lat.degrees > 24.396308 and lat.degrees < 49.384358 and lon.degrees > -125.0 and lon.degrees < -66.93457: # setting boundaries for USA
+            # if lat.degrees > 24.396308 and lat.degrees < 49.384358 and lon.degrees > -125.0 and lon.degrees < -66.93457: # setting boundaries for USA
+            point = Point(lon.degrees, lat.degrees)
+            if point.within(us_boundary.geometry.iloc[0]):
                 gs.append([lat.degrees, lon.degrees])
                 # sat_.append(sat.name)
                 sat_.append(sat)
@@ -209,7 +215,6 @@ def get_candidate_locs_jida(start_time, time_arr, tle_path, search_dist_bound=15
 
     print('Initial number of candidate location clusters:', np.size(group_mat, 0))
 
-    world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
     if fig_pointer is None:
         fig, ax = plt.subplots(1, 1, figsize=(10, 6))
     else:
@@ -222,7 +227,7 @@ def get_candidate_locs_jida(start_time, time_arr, tle_path, search_dist_bound=15
 
     gs_groups = []
     sat_groups = []
-    coarse_gs = []
+    # coarse_gs = []
     for i in range(np.size(group_mat, 0)):
         gs_group = []
         sat_group = []
@@ -232,30 +237,53 @@ def get_candidate_locs_jida(start_time, time_arr, tle_path, search_dist_bound=15
         gs_groups.append(gs_group)
         sat_groups.append(sat_group)
         gs_group = np.array(gs_group)
-        ax.scatter(gs_group[:,1], gs_group[:,0], c=color[int(i%len(color))], s=5)
-        centroid = np.mean(gs_group, axis=0)
-        coarse_gs.append(centroid)
-        ax.scatter(centroid[1], centroid[0], c='purple', marker='x', s=10)
+        # ax.scatter(gs_group[:,1], gs_group[:,0], c=color[int(i%len(color))], s=5)
+        # centroid = np.mean(gs_group, axis=0)
+        # coarse_gs.append(centroid)
+        # ax.scatter(centroid[1], centroid[0], c='purple', marker='x', s=10)
 
-    # for i, sets in enumerate(gs_groups): # sets == group/cluster 
-    #     # get sets that are not possible because they do not see satellites at all times in time_arr
-    #     if len(sets) < len(time_arr):
-    #         remove_set.append(i)
-    #         continue
-    #     # print(i, 'Sets:', len(sets))
-    #     possible_groups += 1
-    #     sets = np.array(sets)
-    #     ax.scatter(sets[:,1], sets[:,0], c=color[int(i%len(color))], s=5)
-    #     # also plot the centroid
-    #     centroid = np.mean(sets, axis=0)
-    #     coarse_gs.append(centroid) # This is the array of possible coarse locations of ground receiver
-    #     ax.scatter(centroid[1], centroid[0], c='purple', marker='x', s=10)
+    # check using intersection
+    num_possible = 0
+    is_possible = np.zeros(np.size(group_mat, 0))
+    coarse_gs = []
+    for gp_idx, group in enumerate(sat_groups):
+        coeff_mat = np.array([]).reshape(0, 2)
+        coeff_vec = np.array([]).reshape(0, 1)
+        for i, sat in enumerate(group):
+            if not is_middle_arr[i]:
+                continue
+            # get satellite subpoints around 10 seconds of the time of highest elevation at 0.1 sec steps
+            time_of_highest_elevation = sat_visible_time_arr[i].utc_datetime()
+            span = np.arange(-1, 1, 0.2)
+            single_sat_time_arr = ts.utc(time_of_highest_elevation.year, time_of_highest_elevation.month, time_of_highest_elevation.day, 
+                time_of_highest_elevation.hour, time_of_highest_elevation.minute, time_of_highest_elevation.second+time_of_highest_elevation.microsecond/1e6+span)
+            subpoints = wgs84.latlon_of(sat.at(single_sat_time_arr))
+            x = subpoints[1].degrees # longitudes
+            y = subpoints[0].degrees # latitudes
+            sat_traj_line = np.polyfit(x, y, 1)
+            # index where span = 0
+            idx = len(span) // 2
+            k_i_ = sat_traj_line[0]
+            k_i = -1/k_i_
+            m_i = y[idx] - k_i*x[idx]
+            coeff_mat = np.vstack((coeff_mat, np.array([k_i, -1])))
+            coeff_vec = np.vstack((coeff_vec, np.array([-m_i])))
+        x_star = np.linalg.inv(coeff_mat.T@coeff_mat)@coeff_mat.T@coeff_vec
+        # calculate the error
+        error = np.linalg.norm(coeff_mat@x_star - coeff_vec)
+        if error < 1:
+            num_possible += 1
+            is_possible[gp_idx] = 1
+            coarse_gs.append(np.array([x_star[1][0], x_star[0][0]]))
+            ax.scatter(x_star[0][0], x_star[1][0], c='purple', marker='x', s=10)
 
-    print('Possible:', np.size(group_mat, 0))
+    print('Possible:', num_possible)
+    sat_groups = [sat_groups[i] for i in range(np.size(group_mat, 0)) if is_possible[i]]
+    gs_groups = [gs_groups[i] for i in range(np.size(group_mat, 0)) if is_possible[i]]
 
     ## Plotting satellite trajectory lines for sats in each group. 
     ##Also, finding the point on earth that minimizes the distance to the satellite trajectory lines
-    for gp_idx,group in enumerate(sat_groups):
+    for gp_idx, group in enumerate(sat_groups):
         lines_coeffs = []
         sats_name_arr = []
         for i,sat in enumerate(group):
@@ -277,18 +305,18 @@ def get_candidate_locs_jida(start_time, time_arr, tle_path, search_dist_bound=15
             lines_coeffs.append(sat_traj_line)
 
         #minimize distance to the trajectroy lines
-        init_point = np.mean(gs_groups[gp_idx], axis=0)
-        res = minimize(sum_dist, [init_point[1]-1, init_point[0]-1], args=(lines_coeffs), method = 'Nelder-Mead')
+        # init_point = np.mean(gs_groups[gp_idx], axis=0)
+        # res = minimize(sum_dist, [init_point[1]-1, init_point[0]-1], args=(lines_coeffs), method = 'Nelder-Mead')
         print("Centroid of group ", gp_idx, ":", coarse_gs[gp_idx])
-        print('Point that minimizes distance to each satellite trajectory :', res.x[1], res.x[0])
+        # print('Point that minimizes distance to each satellite trajectory :', res.x[1], res.x[0])
         
         #plot the point
-        ax.scatter(res.x[0], res.x[1], c='yellow', marker='x', s=10)
+        # ax.scatter(res.x[0], res.x[1], c='yellow', marker='x', s=10)
         print('sats in group:', sats_name_arr)
         print("=====================================================================")
 
     return gs_groups, coarse_gs, sat_groups
-    
+            
 
 def get_phase_diff_params_allsatsingroups(coarse_gs, satdictlist_for_each_gs, time_arr, orientation_dict=None, receiver_param_dict=None):
     # calc phase diff 01, 02, 12 for each satellite in each gs group

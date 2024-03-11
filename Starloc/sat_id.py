@@ -14,6 +14,7 @@ import os
 from scipy import io as sio
 import pytz
 from utils.ephemeris import EphemerisLoader
+from tqdm import tqdm
 
 class DopplerTrack(object):
     num_tracks = 0
@@ -350,3 +351,48 @@ def aoa_sim_1_sat_eph(date, path, sat_id, t_start, t_stop, t_step):
         if name == sat_id:
             _, t_list, _, az, el, range_ = calc_doppler_eph(zip_folder_path, sat_id, gs, t_start, t_stop, 1/t_step)
             return t_list, az, el, range_
+
+def get_phase_diff_params_allsatsingroups_jida(gs_groups, coarse_gs, sat_groups, time_arr, tle_path, yaw, pitch, roll, d, lam):
+    '''
+    time_arr is the time stamp
+    '''
+    # satellites = load.tle_file(tle_path)
+    # by_name = {sat.name: sat for sat in satellites}
+    group_num = len(gs_groups)
+    num_period = len(gs_groups[0])
+    t_step = 1 # secs
+    phase_diff = []
+
+    loc_1, loc_0, loc_2 = np.array([0,0,0]), np.array([0,-d,0]), np.array([d,0,0])
+    R_yaw = np.array([[np.cos(np.deg2rad(yaw)), -np.sin(np.deg2rad(yaw)), 0], [np.sin(np.deg2rad(yaw)), np.cos(np.deg2rad(yaw)), 0], [0, 0, 1]])
+    R_pitch = np.array([[np.cos(np.deg2rad(pitch)), 0, np.sin(np.deg2rad(pitch))], [0, 1, 0], [-np.sin(np.deg2rad(pitch)), 0, np.cos(np.deg2rad(pitch))]])
+    R_roll = np.array([[1, 0, 0], [0, np.cos(np.deg2rad(roll)), -np.sin(np.deg2rad(roll))], [0, np.sin(np.deg2rad(roll)), np.cos(np.deg2rad(roll))]])
+    R = R_yaw @ R_pitch @ R_roll
+    loc_0, loc_2 = R @ loc_0, R @ loc_2
+
+    for i in tqdm(range(group_num)):
+        centroid = coarse_gs[i]
+        group_i = gs_groups[i]
+        sat_i = sat_groups[i]
+        gs = wgs84.latlon(centroid[0], centroid[1])
+        phase_diff_1_group = []
+        for j in range(num_period):
+            time_j = time_arr[j]
+            t_start, t_end = time_j - 5, time_j + 5
+            d_1 = datetime.utcfromtimestamp(t_start)
+            t_start = datetime(d_1.year, d_1.month, d_1.day, d_1.hour, d_1.minute, d_1.second, d_1.microsecond, tzinfo=pytz.UTC)
+
+            d_2 = datetime.utcfromtimestamp(t_end)
+            t_end = datetime(d_2.year, d_2.month, d_2.day, d_2.hour, d_2.minute, d_2.second, d_2.microsecond, tzinfo=pytz.UTC)
+            sat = sat_i[j]
+            _, t_list, dopp, az, el, range_ = calc_doppler(sat, gs, t_start, t_end, t_step)
+
+            loc_sat = np.column_stack((range_ * np.cos(np.deg2rad(el)) * np.sin(np.deg2rad(az)), range_ * np.cos(np.deg2rad(el)) * np.cos(np.deg2rad(az)), range_ * np.sin(np.deg2rad(el))))
+            range_1 = np.linalg.norm(loc_sat-loc_1, axis=1)
+            range_0 = np.linalg.norm(loc_sat-loc_0, axis=1)
+            range_2 = np.linalg.norm(loc_sat-loc_2, axis=1)
+            del_phi_01_gt = -(range_0-range_1)/lam*2*np.pi
+            del_phi_12_gt = -(range_1-range_2)/lam*2*np.pi
+            phase_diff_1_group.append(np.array([np.mean(np.diff(del_phi_01_gt))/t_step, np.mean(np.diff(del_phi_12_gt))/t_step]))
+        phase_diff.append(phase_diff_1_group)
+    return phase_diff
