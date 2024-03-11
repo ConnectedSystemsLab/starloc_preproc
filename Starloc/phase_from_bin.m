@@ -2,7 +2,7 @@
 % first specify the date here, make sure that res.mat is saved to this
 % folder (also for id doppler, simulation results needed), make sure the
 % root directory is Starloc/
-date_ = "5Feb2024_23-58-08/";
+date_ = "results/6Mar2024_03_51/";
 % have a look at original tracks
 addpath ../Tool_Functions/;
 sample_rate = 2e6;
@@ -24,12 +24,13 @@ plot(res(:,1),res(:,2),'.');
 % period_starts = [640 780 865];
 % period_ends = [690 850 890];
 % 2_5-5Feb2024_23:58:08
-period_starts = [0 30 130 190 230 310 370 510 600];
-period_ends = [20 80 185 230 280 360 430 550 630];
+% period_starts = [0 30 130 190 230 310 370 510 600];
+% period_ends = [20 80 185 230 280 360 430 550 630];
 % 20Feb2024_23:19:00
 % period_starts = [185 230 270 270 320 650 790];
 % period_ends = [230 270 320 310 360 680 830];
-
+period_starts = [25, 90, 125, 159, 427, 452, 715, 761] 
+period_ends = [60, 129, 155, 200, 448, 490, 749, 782]
 num_periods = length(period_starts);
 res_ = {};
 for ii = 1:num_periods
@@ -145,7 +146,7 @@ end
 %%%%%%%%%% PART 2: ID %%%%%%%%%%%%%%%
 % doppler sim & identify
 % first load the doppler from date folder
-load(date_+"output_doppler.mat");
+load(date_+"output_doppler_coarsegs.mat");
 sat_sim_fn = fieldnames(sat_dopp_dict);
 for sat_id = 1:num_periods
     dopp_main = dopp_track_main_dict{sat_id};
@@ -234,9 +235,9 @@ loc_3d = r*[cosd(el_gt).*sind(az_gt) cosd(el_gt).*cosd(az_gt) sind(el_gt)];
 loc_1 = [0 ; 0 ; 0];
 loc_0 = [0 ; -d ; 0];
 loc_2 = [d ; 0 ; 0];
-alpha = 0.1; R_alpha = [cosd(alpha) -sind(alpha) 0;sind(alpha) cosd(alpha) 0;0 0 1];
-beta = 0.23; R_beta = [cosd(beta) 0 sind(beta);0 1 0;-sind(beta) 0 cosd(beta)];
-gamma = 1.2; R_gamma = [1 0 0;0 cosd(gamma) -sind(gamma);0 sind(gamma) cosd(gamma)];
+alpha = 9; R_alpha = [cosd(alpha) -sind(alpha) 0;sind(alpha) cosd(alpha) 0;0 0 1];
+beta = -0.18; R_beta = [cosd(beta) 0 sind(beta);0 1 0;-sind(beta) 0 cosd(beta)];
+gamma = 1.12; R_gamma = [1 0 0;0 cosd(gamma) -sind(gamma);0 sind(gamma) cosd(gamma)];
 R = R_alpha*R_beta*R_gamma;
 % R = R_gamma*R_beta*R_alpha;
 range_1 = vecnorm((loc_3d-(R*loc_1)')');

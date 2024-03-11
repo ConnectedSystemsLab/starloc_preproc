@@ -24,6 +24,22 @@ def sum_dist(point, sattrajs_coeffs):
         dist += point_to_line_dist(x, y, line[0], line[1])
     return dist
 
+def get_observed_phase_diff_params(mat_file_path):
+    dopp_track_dict = sio.loadmat(mat_file_path)['dopp_track_dict']
+    sat_num = dopp_track_dict.shape[1]
+    get_observed_phase_diff_params = []
+    for sat_idx in range(sat_num):
+        # time for tracked tones
+        dopp_track = dopp_track_dict[0, sat_idx]
+        t_repeat = dopp_track[:, 0].real
+        t_sat_start, t_sat_end = t_repeat[0].real, t_repeat[-1].real
+        del_phi_repeat_01 = np.unwrap(np.angle(dopp_track[:, 2])-np.angle(dopp_track[:, 3]))
+        del_phi_repeat_12 = np.unwrap(np.angle(dopp_track[:, 3])-np.angle(dopp_track[:, 4]))
+        param_01 = np.polyfit(t_repeat, del_phi_repeat_01, 1)
+        param_12 = np.polyfit(t_repeat, del_phi_repeat_12, 1)
+        get_observed_phase_diff_params.append([param_01, param_12])
+    return np.array(get_observed_phase_diff_params)
+
 def get_candidate_locs(start_time, time_arr, tle_path, search_dist_bound=150, fig_pointer=None):
     ts = load.timescale()
     satellites = load.tle_file(tle_path)
@@ -135,7 +151,7 @@ def get_candidate_locs(start_time, time_arr, tle_path, search_dist_bound=150, fi
             subpoints = wgs84.latlon_of(sat.at(single_sat_time_arr))
             x = subpoints[1].degrees # longitudes
             y = subpoints[0].degrees # latitudes
-            plt.plot(x, y, '--', color='black')
+            # plt.plot(x, y, '--', color='black')
             plt.text(x[-1], y[-1], sat.name, fontsize=5, color='black')
             # polyfit line to x,y
             sat_traj_line = np.polyfit(x, y, 1)
