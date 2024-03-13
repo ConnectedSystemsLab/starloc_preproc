@@ -263,6 +263,9 @@ def get_candidate_locs_jida(start_time, time_arr, is_middle_arr, tle_path, searc
     is_possible = np.zeros(np.size(group_mat, 0))
     coarse_gs = []
     for gp_idx, group in enumerate(sat_groups):
+        # check whether there's repeated satellites, if so, continue
+        if len(group) != len(set(group)):
+            continue
         coeff_mat = np.array([]).reshape(0, 2)
         coeff_vec = np.array([]).reshape(0, 1)
         for i, sat in enumerate(group):
@@ -287,7 +290,7 @@ def get_candidate_locs_jida(start_time, time_arr, is_middle_arr, tle_path, searc
         x_star = np.linalg.inv(coeff_mat.T@coeff_mat)@coeff_mat.T@coeff_vec
         # calculate the error
         error = np.linalg.norm(coeff_mat@x_star - coeff_vec)
-        if error < 1:
+        if error / np.sum(is_middle_arr) < .2:
             num_possible += 1
             is_possible[gp_idx] = 1
             coarse_gs.append(np.array([x_star[1][0], x_star[0][0]]))

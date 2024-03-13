@@ -396,3 +396,36 @@ def get_phase_diff_params_allsatsingroups_jida(gs_groups, coarse_gs, sat_groups,
             phase_diff_1_group.append(np.array([np.mean(np.diff(del_phi_01_gt))/t_step, np.mean(np.diff(del_phi_12_gt))/t_step]))
         phase_diff.append(phase_diff_1_group)
     return phase_diff
+
+def get_doppler_allsatsingroups(gs_groups, coarse_gs, sat_groups, time_arr, tle_path):
+    '''
+    time_arr is the time stamp
+    '''
+    # satellites = load.tle_file(tle_path)
+    # by_name = {sat.name: sat for sat in satellites}
+    group_num = len(gs_groups)
+    num_period = len(gs_groups[0])
+    t_step = 1 # secs
+    dopp_, tt = [], []
+
+    for i in tqdm(range(group_num)):
+        centroid = coarse_gs[i]
+        group_i = gs_groups[i]
+        sat_i = sat_groups[i]
+        gs = wgs84.latlon(centroid[0], centroid[1])
+        dopp_1_group = []
+        for j in range(num_period):
+            time_j = time_arr[j]
+            t_start, t_end = time_j - 5, time_j + 5
+            d_1 = datetime.utcfromtimestamp(t_start)
+            t_start = datetime(d_1.year, d_1.month, d_1.day, d_1.hour, d_1.minute, d_1.second, d_1.microsecond, tzinfo=pytz.UTC)
+
+            d_2 = datetime.utcfromtimestamp(t_end)
+            t_end = datetime(d_2.year, d_2.month, d_2.day, d_2.hour, d_2.minute, d_2.second, d_2.microsecond, tzinfo=pytz.UTC)
+            sat = sat_i[j]
+            _, t_list, dopp, az, el, range_ = calc_doppler(sat, gs, t_start, t_end, t_step)
+
+            dopp_1_group.append(dopp)
+        tt.append(t_list)
+        dopp_.append(dopp_1_group)
+    return dopp_, tt
