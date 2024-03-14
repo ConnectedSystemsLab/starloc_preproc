@@ -303,7 +303,8 @@ def aoa_sim_1_sat(date, path, sat_id, t_start, t_stop, t_step):
     farm = wgs84.latlon(farm_lat, farm_lon, elevation_m=218)
     # gs =  siebel
     farm_imu = wgs84.latlon(+40.07216262817384, -88.20952606201173, elevation_m=182.69)
-    gs = farm_imu
+    # gs = farm_imu
+    gs = wgs84.latlon(+39.93383521, -88.25903011, elevation_m=182.69)
 
     # convert from timestamp to datetime
     d_1 = datetime.utcfromtimestamp(t_start)
@@ -429,3 +430,41 @@ def get_doppler_allsatsingroups(gs_groups, coarse_gs, sat_groups, time_arr, tle_
         tt.append(t_list)
         dopp_.append(dopp_1_group)
     return dopp_, tt
+
+def calc_doppler_blind_id(sat, gs_, start_time, stop_time, fs, fc=11.325e9, min_ele=60):
+    c = 299792458
+    ts = load.timescale()
+    d_1 = datetime.utcfromtimestamp(start_time)
+    start_time = datetime(d_1.year, d_1.month, d_1.day, d_1.hour, d_1.minute, d_1.second, d_1.microsecond, tzinfo=pytz.UTC)
+    d_2 = datetime.utcfromtimestamp(stop_time)
+    stop_time = datetime(d_2.year, d_2.month, d_2.day, d_2.hour, d_2.minute, d_2.second, d_2.microsecond, tzinfo=pytz.UTC)
+
+    gs = wgs84.latlon(gs_[0], gs_[1])
+    t = ts.utc(start_time)
+    duration = stop_time-start_time
+    n_list = np.arange(0, fs*duration.total_seconds() + 1, 1).astype(int)
+    
+    doppler_shift = np.empty(len(n_list))
+    azimuth = np.empty(len(n_list))
+    elevation = np.empty(len(n_list))
+    range_ = np.empty(len(n_list))
+
+    sat_ele_max = -inf
+    for n in n_list:
+        dist = (sat-gs).at(t)
+        t = ts.utc(t.utc_datetime()+timedelta(milliseconds=1000/fs))
+        alt, az, distance = dist.altaz() 
+        if alt.degrees > sat_ele_max:
+            sat_ele_max = alt.degrees
+        _, _, the_range, _, _, range_rate = dist.frame_latlon_and_rates(gs)
+        doppler_shift[n] = -fc*range_rate.km_per_s*1000/c
+        if alt.degrees < min_ele-10:
+            doppler_shift[n] = np.nan
+        azimuth[n] = az.degrees
+        elevation[n] = alt.degrees
+        range_[n] = the_range.m
+        
+    t_list = n_list/fs
+    is_visible = sat_ele_max > min_ele
+
+    return is_visible, t_list, doppler_shift, azimuth, elevation, range_
