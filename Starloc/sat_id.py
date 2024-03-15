@@ -295,16 +295,17 @@ def get_dopp_dict(fc, min_ele, gs, timestep_list, visible_sats):
         sat_dopp_dict[key] = sat_dopp_dict[key].T
     return sat_dopp_dict
 
-def aoa_sim_1_sat(date, path, sat_id, t_start, t_stop, t_step):
+def aoa_sim_1_sat(date, path, sat_id, t_start, t_stop, t_step, gs_lat=+40.07216262817384, gs_lon=-88.20958051030674, gs_elevation=182.69):
     satellites = load.tle_file(path) # either use path to tle or directly fetch latest tle from the url
     siebel_lat, siebel_lon = (+40.11389690596162, -88.22484814695467)
     siebel = wgs84.latlon(siebel_lat, siebel_lon) 
     farm_lat, farm_lon = (+40.072969193609126, -88.20958051030674)
     farm = wgs84.latlon(farm_lat, farm_lon, elevation_m=218)
     # gs =  siebel
-    farm_imu = wgs84.latlon(+40.07216262817384, -88.20952606201173, elevation_m=182.69)
+    # farm_imu = wgs84.latlon(+40.07216262817384, -88.20952606201173, elevation_m=182.69)
     # gs = farm_imu
-    gs = wgs84.latlon(+39.93383521, -88.25903011, elevation_m=182.69)
+    # gs = wgs84.latlon(+39.93383521, -88.25903011, elevation_m=182.69)
+    gs = wgs84.latlon(gs_lat, gs_lon, elevation_m=gs_elevation)
 
     # convert from timestamp to datetime
     d_1 = datetime.utcfromtimestamp(t_start)
