@@ -124,7 +124,7 @@ class CalibrationSignal:
             
         return start_index, stop_index
     
-    def get_all_refsigidx(self, nfft=2**15, num_samples_per_step=None, ref_sig_thresh=100):
+    def get_all_refsigidx(self, nfft=2**15, num_samples_per_step=None, ref_sig_thresh=500):
         """
         Get the start and stop index of all the reference signals in the file. 
         
@@ -146,7 +146,7 @@ class CalibrationSignal:
 
         return ref_sig_indexes
     
-    def get_refsig_phase(self, ref_sig_idx, buffer=0.01):
+    def get_refsig_phase(self, ref_sig_idx, buffer=0.05):
         """
         Get the phase of the reference signal. 
         

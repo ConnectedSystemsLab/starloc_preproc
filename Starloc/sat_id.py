@@ -14,6 +14,7 @@ import os
 from scipy import io as sio
 import pytz
 from utils.ephemeris import EphemerisLoader
+from tqdm import tqdm
 
 class DopplerTrack(object):
     num_tracks = 0
@@ -302,7 +303,8 @@ def aoa_sim_1_sat(date, path, sat_id, t_start, t_stop, t_step):
     farm = wgs84.latlon(farm_lat, farm_lon, elevation_m=218)
     # gs =  siebel
     farm_imu = wgs84.latlon(+40.07216262817384, -88.20952606201173, elevation_m=182.69)
-    gs = farm_imu
+    # gs = farm_imu
+    gs = wgs84.latlon(+39.93383521, -88.25903011, elevation_m=182.69)
 
     # convert from timestamp to datetime
     d_1 = datetime.utcfromtimestamp(t_start)
@@ -350,3 +352,119 @@ def aoa_sim_1_sat_eph(date, path, sat_id, t_start, t_stop, t_step):
         if name == sat_id:
             _, t_list, _, az, el, range_ = calc_doppler_eph(zip_folder_path, sat_id, gs, t_start, t_stop, 1/t_step)
             return t_list, az, el, range_
+
+def get_phase_diff_params_allsatsingroups_jida(gs_groups, coarse_gs, sat_groups, time_arr, tle_path, yaw, pitch, roll, d, lam):
+    '''
+    time_arr is the time stamp
+    '''
+    # satellites = load.tle_file(tle_path)
+    # by_name = {sat.name: sat for sat in satellites}
+    group_num = len(gs_groups)
+    num_period = len(gs_groups[0])
+    t_step = 1 # secs
+    phase_diff = []
+
+    loc_1, loc_0, loc_2 = np.array([0,0,0]), np.array([0,-d,0]), np.array([d,0,0])
+    R_yaw = np.array([[np.cos(np.deg2rad(yaw)), -np.sin(np.deg2rad(yaw)), 0], [np.sin(np.deg2rad(yaw)), np.cos(np.deg2rad(yaw)), 0], [0, 0, 1]])
+    R_pitch = np.array([[np.cos(np.deg2rad(pitch)), 0, np.sin(np.deg2rad(pitch))], [0, 1, 0], [-np.sin(np.deg2rad(pitch)), 0, np.cos(np.deg2rad(pitch))]])
+    R_roll = np.array([[1, 0, 0], [0, np.cos(np.deg2rad(roll)), -np.sin(np.deg2rad(roll))], [0, np.sin(np.deg2rad(roll)), np.cos(np.deg2rad(roll))]])
+    R = R_yaw @ R_pitch @ R_roll
+    loc_0, loc_2 = R @ loc_0, R @ loc_2
+
+    for i in tqdm(range(group_num)):
+        centroid = coarse_gs[i]
+        group_i = gs_groups[i]
+        sat_i = sat_groups[i]
+        gs = wgs84.latlon(centroid[0], centroid[1])
+        phase_diff_1_group = []
+        for j in range(num_period):
+            time_j = time_arr[j]
+            t_start, t_end = time_j - 5, time_j + 5
+            d_1 = datetime.utcfromtimestamp(t_start)
+            t_start = datetime(d_1.year, d_1.month, d_1.day, d_1.hour, d_1.minute, d_1.second, d_1.microsecond, tzinfo=pytz.UTC)
+
+            d_2 = datetime.utcfromtimestamp(t_end)
+            t_end = datetime(d_2.year, d_2.month, d_2.day, d_2.hour, d_2.minute, d_2.second, d_2.microsecond, tzinfo=pytz.UTC)
+            sat = sat_i[j]
+            _, t_list, dopp, az, el, range_ = calc_doppler(sat, gs, t_start, t_end, t_step)
+
+            loc_sat = np.column_stack((range_ * np.cos(np.deg2rad(el)) * np.sin(np.deg2rad(az)), range_ * np.cos(np.deg2rad(el)) * np.cos(np.deg2rad(az)), range_ * np.sin(np.deg2rad(el))))
+            range_1 = np.linalg.norm(loc_sat-loc_1, axis=1)
+            range_0 = np.linalg.norm(loc_sat-loc_0, axis=1)
+            range_2 = np.linalg.norm(loc_sat-loc_2, axis=1)
+            del_phi_01_gt = -(range_0-range_1)/lam*2*np.pi
+            del_phi_12_gt = -(range_1-range_2)/lam*2*np.pi
+            phase_diff_1_group.append(np.array([np.mean(np.diff(del_phi_01_gt))/t_step, np.mean(np.diff(del_phi_12_gt))/t_step]))
+        phase_diff.append(phase_diff_1_group)
+    return phase_diff
+
+def get_doppler_allsatsingroups(gs_groups, coarse_gs, sat_groups, time_arr, tle_path):
+    '''
+    time_arr is the time stamp
+    '''
+    # satellites = load.tle_file(tle_path)
+    # by_name = {sat.name: sat for sat in satellites}
+    group_num = len(gs_groups)
+    num_period = len(gs_groups[0])
+    t_step = 1 # secs
+    dopp_, tt = [], []
+
+    for i in tqdm(range(group_num)):
+        centroid = coarse_gs[i]
+        group_i = gs_groups[i]
+        sat_i = sat_groups[i]
+        gs = wgs84.latlon(centroid[0], centroid[1])
+        dopp_1_group = []
+        for j in range(num_period):
+            time_j = time_arr[j]
+            t_start, t_end = time_j - 5, time_j + 5
+            d_1 = datetime.utcfromtimestamp(t_start)
+            t_start = datetime(d_1.year, d_1.month, d_1.day, d_1.hour, d_1.minute, d_1.second, d_1.microsecond, tzinfo=pytz.UTC)
+
+            d_2 = datetime.utcfromtimestamp(t_end)
+            t_end = datetime(d_2.year, d_2.month, d_2.day, d_2.hour, d_2.minute, d_2.second, d_2.microsecond, tzinfo=pytz.UTC)
+            sat = sat_i[j]
+            _, t_list, dopp, az, el, range_ = calc_doppler(sat, gs, t_start, t_end, t_step)
+
+            dopp_1_group.append(dopp)
+        tt.append(t_list)
+        dopp_.append(dopp_1_group)
+    return dopp_, tt
+
+def calc_doppler_blind_id(sat, gs_, start_time, stop_time, fs, fc=11.325e9, min_ele=60):
+    c = 299792458
+    ts = load.timescale()
+    d_1 = datetime.utcfromtimestamp(start_time)
+    start_time = datetime(d_1.year, d_1.month, d_1.day, d_1.hour, d_1.minute, d_1.second, d_1.microsecond, tzinfo=pytz.UTC)
+    d_2 = datetime.utcfromtimestamp(stop_time)
+    stop_time = datetime(d_2.year, d_2.month, d_2.day, d_2.hour, d_2.minute, d_2.second, d_2.microsecond, tzinfo=pytz.UTC)
+
+    gs = wgs84.latlon(gs_[0], gs_[1])
+    t = ts.utc(start_time)
+    duration = stop_time-start_time
+    n_list = np.arange(0, fs*duration.total_seconds() + 1, 1).astype(int)
+    
+    doppler_shift = np.empty(len(n_list))
+    azimuth = np.empty(len(n_list))
+    elevation = np.empty(len(n_list))
+    range_ = np.empty(len(n_list))
+
+    sat_ele_max = -inf
+    for n in n_list:
+        dist = (sat-gs).at(t)
+        t = ts.utc(t.utc_datetime()+timedelta(milliseconds=1000/fs))
+        alt, az, distance = dist.altaz() 
+        if alt.degrees > sat_ele_max:
+            sat_ele_max = alt.degrees
+        _, _, the_range, _, _, range_rate = dist.frame_latlon_and_rates(gs)
+        doppler_shift[n] = -fc*range_rate.km_per_s*1000/c
+        if alt.degrees < min_ele-10:
+            doppler_shift[n] = np.nan
+        azimuth[n] = az.degrees
+        elevation[n] = alt.degrees
+        range_[n] = the_range.m
+        
+    t_list = n_list/fs
+    is_visible = sat_ele_max > min_ele
+
+    return is_visible, t_list, doppler_shift, azimuth, elevation, range_
