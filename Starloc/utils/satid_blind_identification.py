@@ -1,3 +1,4 @@
+from cProfile import label
 from skyfield.api import load, wgs84
 from datetime import datetime
 import numpy as np
@@ -294,12 +295,14 @@ def get_candidate_locs_jida(start_time, time_arr, is_middle_arr, tle_path, searc
             num_possible += 1
             is_possible[gp_idx] = 1
             coarse_gs.append(np.array([x_star[1][0], x_star[0][0]]))
-            ax.scatter(x_star[0][0], x_star[1][0], c='purple', marker='x', s=10)
+            ax.scatter(x_star[0][0], x_star[1][0], c='purple', marker='x', s=20)
+            for_plotting = x_star
+    ax.scatter(for_plotting[0][0], for_plotting[1][0], c='purple', marker='x', s=20, label='Candidate Locations')
 
     print('Possible:', num_possible)
     sat_groups = [sat_groups[i] for i in range(np.size(group_mat, 0)) if is_possible[i]]
     gs_groups = [gs_groups[i] for i in range(np.size(group_mat, 0)) if is_possible[i]]
-
+    
     ## Plotting satellite trajectory lines for sats in each group. 
     ##Also, finding the point on earth that minimizes the distance to the satellite trajectory lines
     for gp_idx, group in enumerate(sat_groups):
@@ -315,8 +318,8 @@ def get_candidate_locs_jida(start_time, time_arr, is_middle_arr, tle_path, searc
             subpoints = wgs84.latlon_of(sat.at(single_sat_time_arr))
             x = subpoints[1].degrees # longitudes
             y = subpoints[0].degrees # latitudes
-            plt.plot(x, y, '--', color='black')
-            plt.text(x[-1], y[-1], sat.name, fontsize=5, color='black')
+            # plt.plot(x, y, '--', color='black')
+            # plt.text(x[-1], y[-1], sat.name, fontsize=5, color='black')
             # polyfit line to x,y
             sat_traj_line = np.polyfit(x, y, 1)
             # print('Satellite Trajectory Line slope:', sat_traj_line[0], "Intercept:", sat_traj_line[1])
