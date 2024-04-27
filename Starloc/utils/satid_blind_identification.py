@@ -291,7 +291,7 @@ def get_candidate_locs_jida(start_time, time_arr, is_middle_arr, tle_path, searc
         x_star = np.linalg.inv(coeff_mat.T@coeff_mat)@coeff_mat.T@coeff_vec
         # calculate the error
         error = np.linalg.norm(coeff_mat@x_star - coeff_vec)
-        if error / np.sum(is_middle_arr) < .3:
+        if error / np.sum(is_middle_arr) < .5:
             num_possible += 1
             is_possible[gp_idx] = 1
             coarse_gs.append(np.array([x_star[1][0], x_star[0][0]]))
