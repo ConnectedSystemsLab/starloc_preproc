@@ -1,6 +1,5 @@
-from cProfile import label
 from skyfield.api import load, wgs84
-from datetime import datetime
+from datetime import datetime, timedelta
 import numpy as np
 import matplotlib.pyplot as plt
 import geopandas as gpd
@@ -9,6 +8,8 @@ import pytz
 import copy
 from scipy.optimize import minimize
 from shapely.geometry import Point
+from math import inf
+
 
 ## funcs for distance optimization 
 def point_to_line_dist(x, y, m, c):
@@ -415,6 +416,54 @@ def get_phase_diff_params_allsatsingroups(coarse_gs, satdictlist_for_each_gs, ti
                     
     return phasediffdict_for_each_gs, phase_diff_param
 
+def get_phase_diff_params_allsatsingroups_jida(gs_groups, coarse_gs, sat_groups, time_arr, tle_path, yaw, pitch, roll, d, lam):
+    '''
+    time_arr is the time stamp
+    '''
+    from tqdm import tqdm
+    from .sat_simulation import calc_doppler
+
+    # satellites = load.tle_file(tle_path)
+    # by_name = {sat.name: sat for sat in satellites}
+    group_num = len(gs_groups)
+    num_period = len(gs_groups[0])
+    t_step = 1 # secs
+    phase_diff = []
+
+    loc_1, loc_0, loc_2 = np.array([0,0,0]), np.array([0,-d,0]), np.array([d,0,0])
+    R_yaw = np.array([[np.cos(np.deg2rad(yaw)), -np.sin(np.deg2rad(yaw)), 0], [np.sin(np.deg2rad(yaw)), np.cos(np.deg2rad(yaw)), 0], [0, 0, 1]])
+    R_pitch = np.array([[np.cos(np.deg2rad(pitch)), 0, np.sin(np.deg2rad(pitch))], [0, 1, 0], [-np.sin(np.deg2rad(pitch)), 0, np.cos(np.deg2rad(pitch))]])
+    R_roll = np.array([[1, 0, 0], [0, np.cos(np.deg2rad(roll)), -np.sin(np.deg2rad(roll))], [0, np.sin(np.deg2rad(roll)), np.cos(np.deg2rad(roll))]])
+    R = R_yaw @ R_pitch @ R_roll
+    loc_0, loc_2 = R @ loc_0, R @ loc_2
+
+    for i in tqdm(range(group_num)):
+        centroid = coarse_gs[i]
+        group_i = gs_groups[i]
+        sat_i = sat_groups[i]
+        gs = wgs84.latlon(centroid[0], centroid[1])
+        phase_diff_1_group = []
+        for j in range(num_period):
+            time_j = time_arr[j]
+            t_start, t_end = time_j - 5, time_j + 5
+            d_1 = datetime.utcfromtimestamp(t_start)
+            t_start = datetime(d_1.year, d_1.month, d_1.day, d_1.hour, d_1.minute, d_1.second, d_1.microsecond, tzinfo=pytz.UTC)
+
+            d_2 = datetime.utcfromtimestamp(t_end)
+            t_end = datetime(d_2.year, d_2.month, d_2.day, d_2.hour, d_2.minute, d_2.second, d_2.microsecond, tzinfo=pytz.UTC)
+            sat = sat_i[j]
+            _, t_list, dopp, az, el, range_ = calc_doppler(sat, gs, t_start, t_end, t_step)
+
+            loc_sat = np.column_stack((range_ * np.cos(np.deg2rad(el)) * np.sin(np.deg2rad(az)), range_ * np.cos(np.deg2rad(el)) * np.cos(np.deg2rad(az)), range_ * np.sin(np.deg2rad(el))))
+            range_1 = np.linalg.norm(loc_sat-loc_1, axis=1)
+            range_0 = np.linalg.norm(loc_sat-loc_0, axis=1)
+            range_2 = np.linalg.norm(loc_sat-loc_2, axis=1)
+            del_phi_01_gt = -(range_0-range_1)/lam*2*np.pi
+            del_phi_12_gt = -(range_1-range_2)/lam*2*np.pi
+            phase_diff_1_group.append(np.array([np.mean(np.diff(del_phi_01_gt))/t_step, np.mean(np.diff(del_phi_12_gt))/t_step]))
+        phase_diff.append(phase_diff_1_group)
+    return phase_diff
+
 def find_best_coarse_gs(coarse_gs, time_arr, satdictlist_for_each_gs, phase_diff_param, observed_phase_diff_param):
     min_param_diff_pertime_each_gs = [[] for i in range(len(coarse_gs))]
     min_param_diff_sat_pertime_each_gs = [[] for i in range(len(coarse_gs))]
@@ -447,3 +496,83 @@ def find_best_coarse_gs(coarse_gs, time_arr, satdictlist_for_each_gs, phase_diff
         print(coarse_gs[gs_idx], np.sum(min_param_diff_pertime_each_gs, axis=1)[gs_idx])
 
     return best_coarse_gs_candidate, best_coarse_gs_candidate_idx, min_param_diff_pertime_each_gs, min_param_diff_sat_pertime_each_gs
+
+def calc_doppler_blind_id(sat, gs_, start_time, stop_time, fs, fc=11.325e9, min_ele=60):
+    c = 299792458
+    ts = load.timescale()
+    d_1 = datetime.utcfromtimestamp(start_time)
+    start_time = datetime(d_1.year, d_1.month, d_1.day, d_1.hour, d_1.minute, d_1.second, d_1.microsecond, tzinfo=pytz.UTC)
+    d_2 = datetime.utcfromtimestamp(stop_time)
+    stop_time = datetime(d_2.year, d_2.month, d_2.day, d_2.hour, d_2.minute, d_2.second, d_2.microsecond, tzinfo=pytz.UTC)
+
+    gs = wgs84.latlon(gs_[0], gs_[1])
+    t = ts.utc(start_time)
+    duration = stop_time-start_time
+    n_list = np.arange(0, fs*duration.total_seconds() + 1, 1).astype(int)
+    
+    doppler_shift = np.empty(len(n_list))
+    azimuth = np.empty(len(n_list))
+    elevation = np.empty(len(n_list))
+    range_ = np.empty(len(n_list))
+
+    sat_ele_max = -inf
+    for n in n_list:
+        dist = (sat-gs).at(t)
+        t = ts.utc(t.utc_datetime()+timedelta(milliseconds=1000/fs))
+        alt, az, distance = dist.altaz() 
+        if alt.degrees > sat_ele_max:
+            sat_ele_max = alt.degrees
+        _, _, the_range, _, _, range_rate = dist.frame_latlon_and_rates(gs)
+        doppler_shift[n] = -fc*range_rate.km_per_s*1000/c
+        if alt.degrees < min_ele-10:
+            doppler_shift[n] = np.nan
+        azimuth[n] = az.degrees
+        elevation[n] = alt.degrees
+        range_[n] = the_range.m
+        
+    t_list = n_list/fs
+    is_visible = sat_ele_max > min_ele
+
+    return is_visible, t_list, doppler_shift, azimuth, elevation, range_
+
+def sat_phasedopp_refined_coarsegs(gs_groups, coarse_gs, sat_groups, phase_slope, slope_mes, dopp_coeff_list, dopp_track_main_dict, start_time):
+    
+    err = np.array([])
+    max_phase_err_pergs = [[] for i in range(len(gs_groups))]
+    refined_candidates = []
+    remove_candidates = []
+    for i in (range(len(gs_groups))):
+        sat_group_i = sat_groups[i]
+        coarse_gs_i = coarse_gs[i]
+        phase_slope_i = phase_slope[i]
+        err_i = 0
+        for j in range(len(sat_group_i)):
+
+            # exclude based on phase slope
+            if np.max(np.abs(phase_slope_i[j] - slope_mes[j])) > 0.1:
+                err_i = np.inf
+                max_phase_err_pergs[i] = np.max(np.abs(phase_slope_i[j] - slope_mes[j]))
+                if i in refined_candidates:
+                    remove_candidates.append(i)
+                break
+            else:
+                max_phase_err_pergs[i] = np.max(np.abs(phase_slope_i[j] - slope_mes[j]))
+                refined_candidates.append(i)
+
+            sat_ij = sat_group_i[j]
+            dopp_coeff = dopp_coeff_list[j]
+            dopp_track = dopp_track_main_dict[j]
+            t_repeat = dopp_track[:, 0].real
+            dopp_repeat = dopp_track[:, 1].real
+            t_sat_start, t_sat_end = np.min(t_repeat), np.max(t_repeat)
+            _, t_dopp_sim, dopp_sim, _, _, _ = calc_doppler_blind_id(sat_ij, coarse_gs_i, t_sat_start+start_time, t_sat_end+start_time, 10)
+            t_dopp_sim += t_sat_start
+            dopp_mes = np.polyval(dopp_coeff, t_dopp_sim)
+            err_i += np.var(dopp_mes-dopp_sim)
+        err = np.append(err, err_i)
+    
+    best_coarsegs_idx = np.argmin(err)
+    print('Best Coarse GS: IDX = ', best_coarsegs_idx, "[LAT, LON]= ", coarse_gs[np.argmin(err)])
+    coarse_gs_lat, coarse_gs_lon = coarse_gs[np.argmin(err)]
+    
+    return coarse_gs_lat, coarse_gs_lon, best_coarsegs_idx

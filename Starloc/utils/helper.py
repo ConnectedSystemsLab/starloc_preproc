@@ -28,3 +28,21 @@ def get_distkm_latlon_coordinates(location_coords1, location_coords2):
 
     return dist
     
+def diff_discrete_doppler(dopp_track):
+    """
+    Differentiate a discrete doppler track (that is not continuous and has missing values in between). 
+    First the doppler track is made continuous by doing a polynomial fit. 
+    The differentiation is done by taking the difference between consecutive values.
+    
+    :param dopp_track: 2D numpy array of time, doppler values
+    """
+    import numpy as np
+    t = dopp_track[:, 0].real 
+    dopp = dopp_track[:, 1].real
+    t_start, t_end = np.min(t), np.max(t)
+    p = np.polyfit(t, dopp, 3, w=np.abs(dopp_track[:, 2])**2)
+    t_ = np.arange(t_start, t_end, 0.001)
+    dopp_ = np.polyval(p, t_)
+    dopp_diff = np.diff(dopp_) / np.diff(t_)
+    t_diff = t_[:-1] + 0.5 * np.diff(t_)
+    return np.column_stack((t_diff, dopp_diff)), p

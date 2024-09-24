@@ -183,6 +183,41 @@ def calc_doppler(sat, gs, start_time, stop_time, fs, fc=11.325e9, min_ele=60):
 
     return is_visible, t_list, doppler_shift, azimuth, elevation, range_
 
+def calc_doppler_satloc(sat, gs, start_time, stop_time, fs, fc=11.325e9, min_ele=60):
+    c = 299792458
+    ts = load.timescale()
+    t = ts.utc(start_time)
+    duration = stop_time-start_time
+    n_list = np.arange(0, fs*duration.total_seconds() + 1, 1).astype(int)
+    
+    doppler_shift = np.empty(len(n_list))
+    azimuth = np.empty(len(n_list))
+    elevation = np.empty(len(n_list))
+    range_ = np.empty(len(n_list))
+    sat_loc = np.empty((len(n_list), 3))
+
+    sat_ele_max = -inf
+    for n in n_list:
+        dist = (sat-gs).at(t)
+        sat_loc[n] = sat.at(t).position.m
+        t = ts.utc(t.utc_datetime()+timedelta(milliseconds=1000/fs))
+        alt, az, distance = dist.altaz() 
+        if alt.degrees > sat_ele_max:
+            sat_ele_max = alt.degrees
+        _, _, the_range, _, _, range_rate = dist.frame_latlon_and_rates(gs)
+        doppler_shift[n] = -fc*range_rate.km_per_s*1000/c
+        if alt.degrees < min_ele-10:
+            doppler_shift[n] = np.nan
+        azimuth[n] = az.degrees
+        elevation[n] = alt.degrees
+        range_[n] = the_range.m
+        
+    t_list = n_list/fs
+    is_visible = sat_ele_max > min_ele
+
+    return is_visible, t_list, doppler_shift, azimuth, elevation, range_, sat_loc
+
+
 def calc_doppler_eph(zip_folder_path, sat_id, gs, start_time, stop_time, fs, fc=11.325e9, min_ele=60):
     '''
     param: zip_folder_path: path to the folder containing the ephemeris files
@@ -319,6 +354,32 @@ def aoa_sim_1_sat(date, path, sat_id, t_start, t_stop, t_step, gs_lat=+40.072162
         if name == sat_id:
             _, t_list, _, az, el, range_ = calc_doppler(satellite, gs, t_start, t_stop, 1/t_step)
             return t_list, az, el, range_
+
+def aoa_sim_1_sat_loc(date, path, sat_id, t_start, t_stop, t_step, gs_lat=+40.07216262817384, gs_lon=-88.20958051030674, gs_elevation=182.69):
+    satellites = load.tle_file(path) # either use path to tle or directly fetch latest tle from the url
+    siebel_lat, siebel_lon = (+40.11389690596162, -88.22484814695467)
+    siebel = wgs84.latlon(siebel_lat, siebel_lon) 
+    farm_lat, farm_lon = (+40.072969193609126, -88.20958051030674)
+    farm = wgs84.latlon(farm_lat, farm_lon, elevation_m=218)
+    # gs =  siebel
+    # farm_imu = wgs84.latlon(+40.07216262817384, -88.20952606201173, elevation_m=182.69)
+    # gs = farm_imu
+    # gs = wgs84.latlon(+39.93383521, -88.25903011, elevation_m=182.69)
+    gs = wgs84.latlon(gs_lat, gs_lon, elevation_m=gs_elevation)
+
+    # convert from timestamp to datetime
+    d_1 = datetime.utcfromtimestamp(t_start)
+    t_start = datetime(d_1.year, d_1.month, d_1.day, d_1.hour, d_1.minute, d_1.second, d_1.microsecond, tzinfo=pytz.UTC)
+
+    d_2 = datetime.utcfromtimestamp(t_stop)
+    t_stop = datetime(d_2.year, d_2.month, d_2.day, d_2.hour, d_2.minute, d_2.second, d_2.microsecond, tzinfo=pytz.UTC)
+
+    for satellite in satellites:
+        name = satellite.name
+        if name == sat_id:
+            _, t_list, _, az, el, range_, sat_loc = calc_doppler_satloc(satellite, gs, t_start, t_stop, 1/t_step)
+            return t_list, az, el, range_, sat_loc
+
 
 def dopp_sim_1_sat(date, path, sat_id, t_start, t_stop, t_step, lat, lon, elevation):
     satellites = load.tle_file(path)
