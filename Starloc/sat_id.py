@@ -15,7 +15,9 @@ from scipy import io as sio
 import pytz
 from utils.ephemeris import EphemerisLoader
 from tqdm import tqdm
-
+from astropy.time import Time
+from astropy import coordinates as coord
+import astropy.units as u
 class DopplerTrack(object):
     num_tracks = 0
     def __init__(self, point) -> None:
@@ -187,6 +189,7 @@ def calc_doppler_satloc(sat, gs, start_time, stop_time, fs, fc=11.325e9, min_ele
     c = 299792458
     ts = load.timescale()
     t = ts.utc(start_time)
+    date_time = start_time
     duration = stop_time-start_time
     n_list = np.arange(0, fs*duration.total_seconds() + 1, 1).astype(int)
     
@@ -200,7 +203,11 @@ def calc_doppler_satloc(sat, gs, start_time, stop_time, fs, fc=11.325e9, min_ele
     for n in n_list:
         dist = (sat-gs).at(t)
         sat_loc[n] = sat.at(t).position.m
+        sat_loc[n] = eci_to_ecef_pos(sat_loc[n], date_time, 'm')
+
         t = ts.utc(t.utc_datetime()+timedelta(milliseconds=1000/fs))
+        date_time = date_time+timedelta(milliseconds=1000/fs)
+        
         alt, az, distance = dist.altaz() 
         if alt.degrees > sat_ele_max:
             sat_ele_max = alt.degrees
@@ -530,3 +537,16 @@ def calc_doppler_blind_id(sat, gs_, start_time, stop_time, fs, fc=11.325e9, min_
     is_visible = sat_ele_max > min_ele
 
     return is_visible, t_list, doppler_shift, azimuth, elevation, range_
+    
+def eci_to_ecef_pos(eci_pos, epoch, units):
+    # if isinstance(epoch, datetime):
+    #     epoch = Time(datetime)
+    if units == 'm':
+        us = u.m
+    else:
+        us = u.km
+    eci_coord = coord.CartesianRepresentation(x=eci_pos[0]*us, y=eci_pos[1]*us, z=eci_pos[2]*us)
+    gcrs = coord.GCRS(eci_coord, obstime=epoch)
+    itrf = gcrs.transform_to(coord.ITRS(obstime=epoch))
+    ecef_pos = np.array(itrf.cartesian.xyz.value)
+    return ecef_pos
