@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+*.pyo
+obs_periods copy.json

@@ -1,0 +1,10 @@
+{
+    "hw_parameters": {
+        "center_freq": 11.325e9,
+        "calibsig_freq": 11.3251e9,
+        "sample_rate": 2e6,
+        "antenna_spacing_meters": 13.25e-2,
+        "stft_win": 14e-3
+        }, 
+    "obs_periods_filepath": "./obs_periods.json"
+}
